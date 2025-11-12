@@ -21,6 +21,31 @@ const logo = '/images/logo.jpg';
  * Combines premium UI with full authentication logic
  */
 const Landing = () => {
+  // Debug: Check if component is loading
+  console.log('Landing component loaded');
+  
+  // Debug: Check if CSS is loaded
+  useEffect(() => {
+    console.log('Checking CSS...');
+    const styleSheets = Array.from(document.styleSheets);
+    const landingStyles = styleSheets.find(sheet => 
+      sheet.href && sheet.href.includes('Landing.css')
+    );
+    console.log('Landing.css loaded:', !!landingStyles);
+    
+    // Log computed styles for debugging
+    if (typeof window !== 'undefined') {
+      const input = document.querySelector('.form-input');
+      if (input) {
+        const styles = window.getComputedStyle(input);
+        console.log('Input styles:', {
+          padding: styles.padding,
+          position: styles.position,
+          display: styles.display
+        });
+      }
+    }
+  }, []);
   const navigate = useNavigate();
   const { login, register, user, loading: authLoading } = useAuth();
   
@@ -247,7 +272,7 @@ const Landing = () => {
   const handleGetStarted = useCallback(() => {
     setActiveTab('register');
     setTimeout(() => {
-      const authCard = document.querySelector('.auth-card-premium');
+      const authCard = document.querySelector('.auth-card');
       if (authCard) {
         authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -263,43 +288,43 @@ const Landing = () => {
       icon: Calendar,
       title: "Smart Scheduling",
       description: "AI-powered appointment booking that adapts to your schedule and preferences",
-      gradient: "from-blue-500 to-cyan-500",
-      iconColor: "text-blue-400"
+      gradient: "from-blue-500",
+      iconColor: "#3B82F6"
     },
     {
       icon: Stethoscope,
       title: "Expert Medical Care",
       description: "Connect with board-certified healthcare professionals instantly",
-      gradient: "from-purple-500 to-pink-500",
-      iconColor: "text-purple-400"
+      gradient: "from-purple-500",
+      iconColor: "#A855F7"
     },
     {
       icon: Shield,
       title: "Military-Grade Security",
       description: "Your health data protected with end-to-end encryption and HIPAA compliance",
-      gradient: "from-emerald-500 to-teal-500",
-      iconColor: "text-emerald-400"
+      gradient: "from-emerald-500",
+      iconColor: "#10B981"
     },
     {
       icon: Activity,
       title: "Real-Time Monitoring",
       description: "Track your health metrics and receive instant insights from your care team",
-      gradient: "from-orange-500 to-red-500",
-      iconColor: "text-orange-400"
+      gradient: "from-orange-500",
+      iconColor: "#F97316"
     },
     {
       icon: Heart,
       title: "Personalized Care Plans",
       description: "Custom treatment plans tailored to your unique health journey",
-      gradient: "from-rose-500 to-pink-500",
-      iconColor: "text-rose-400"
+      gradient: "from-rose-500",
+      iconColor: "#F43F5E"
     },
     {
       icon: Zap,
       title: "Lightning Fast Access",
       description: "Get medical advice and prescriptions in minutes, not days",
-      gradient: "from-amber-500 to-yellow-500",
-      iconColor: "text-amber-400"
+      gradient: "from-amber-500",
+      iconColor: "#F59E0B"
     }
   ];
 
@@ -443,18 +468,20 @@ const Navigation = React.memo(({ activeTab, onTabChange, onNavLinkClick, isScrol
         </div>
         
         <div className="nav-center">
-          <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'features')}>
-            Features
-          </button>
-          <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'benefits')}>
-            Benefits
-          </button>
-          <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'testimonials')}>
-            Testimonials
-          </button>
-          <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'contact')}>
-            Contact
-          </button>
+          <div className="nav-links">
+            <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'features')}>
+              Features
+            </button>
+            <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'benefits')}>
+              Benefits
+            </button>
+            <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'testimonials')}>
+              Testimonials
+            </button>
+            <button className="nav-link" onClick={(e) => onNavLinkClick(e, 'contact')}>
+              Contact
+            </button>
+          </div>
         </div>
         
         <div className="nav-right">
@@ -630,7 +657,7 @@ const AuthCard = React.memo(({
   errors, loading, serverError, success
 }) => {
   return (
-    <div className="auth-card auth-card-premium">
+    <div className="auth-card">
       <div className="auth-card-glow"></div>
       
       {/* LOGIN FORM */}
@@ -645,10 +672,23 @@ const AuthCard = React.memo(({
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-group">
-            <div className="input-wrapper">
-              <div className="input-icon">
-                <User size={18} />
-              </div>
+            <div className="input-wrapper" style={{
+              position: 'relative',
+              width: '100%',
+              marginBottom: '1rem'
+            }}>
+              <User 
+                size={18} 
+                className="input-icon" 
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#A3A3A3',
+                  zIndex: 2
+                }} 
+              />
               <input
                 type="text"
                 name="schoolId"
@@ -656,6 +696,23 @@ const AuthCard = React.memo(({
                 value={loginData.schoolId}
                 onChange={handleLoginChange}
                 className={`form-input ${errors.schoolId ? 'error' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem 0.875rem 3rem',
+                  fontSize: '0.9375rem',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'white',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  height: '52px',
+                  lineHeight: 1.5,
+                  color: '#171717',
+                  boxSizing: 'border-box',
+                  outline: 'none'
+                }}
                 disabled={loading}
                 autoComplete="username"
               />
@@ -665,9 +722,7 @@ const AuthCard = React.memo(({
 
           <div className="form-group">
             <div className="input-wrapper">
-              <div className="input-icon">
-                <Lock size={18} />
-              </div>
+              <Lock size={18} className="input-icon" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -675,6 +730,24 @@ const AuthCard = React.memo(({
                 value={loginData.password}
                 onChange={handleLoginChange}
                 className={`form-input ${errors.password ? 'error' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem 0.875rem 3rem',
+                  fontSize: '0.9375rem',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'white',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  height: '52px',
+                  lineHeight: 1.5,
+                  color: '#171717',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  paddingRight: '3rem' // Extra padding for the toggle button
+                }}
                 disabled={loading}
                 autoComplete="current-password"
               />
@@ -724,16 +797,28 @@ const AuthCard = React.memo(({
           <div className="demo-credentials">
             <div className="credential-item">
               <strong>Student:</strong>
-              <span>School ID: <code>23-2323-233</code></span>
+              <span> School ID: <code>23-2323-233</code></span>
             </div>
             <div className="credential-item">
               <strong>Staff/Doctor:</strong>
-              <span>School ID: <code>D-001</code></span>
+              <span> School ID: <code>D-001</code></span>
             </div>
             <p className="demo-note">
               💡 Password is optional for demo. Any School ID starting with 'D' logs in as Staff, others as Student.
             </p>
           </div>
+        </div>
+
+        <div className="auth-switch">
+          <p>
+            Don't have an account?{' '}
+            <button 
+              onClick={() => onTabChange('register')}
+              className="auth-switch-link"
+            >
+              Register here
+            </button>
+          </p>
         </div>
       </div>
 
@@ -749,10 +834,23 @@ const AuthCard = React.memo(({
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-group">
-            <div className="input-wrapper">
-              <div className="input-icon">
-                <Mail size={18} />
-              </div>
+            <div className="input-wrapper" style={{
+              position: 'relative',
+              width: '100%',
+              marginBottom: '1rem'
+            }}>
+              <Mail 
+                size={18} 
+                className="input-icon" 
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#A3A3A3',
+                  zIndex: 2
+                }} 
+              />
               <input
                 type="email"
                 name="email"
@@ -760,6 +858,23 @@ const AuthCard = React.memo(({
                 value={registerData.email}
                 onChange={handleRegisterChange}
                 className={`form-input ${errors.email ? 'error' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem 0.875rem 3rem',
+                  fontSize: '0.9375rem',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'white',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  height: '52px',
+                  lineHeight: 1.5,
+                  color: '#171717',
+                  boxSizing: 'border-box',
+                  outline: 'none'
+                }}
                 disabled={loading}
                 autoComplete="email"
               />
@@ -768,10 +883,23 @@ const AuthCard = React.memo(({
           </div>
 
           <div className="form-group">
-            <div className="input-wrapper">
-              <div className="input-icon">
-                <Lock size={18} />
-              </div>
+            <div className="input-wrapper" style={{
+              position: 'relative',
+              width: '100%',
+              marginBottom: '1rem'
+            }}>
+              <Lock 
+                size={18} 
+                className="input-icon" 
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#A3A3A3',
+                  zIndex: 2
+                }} 
+              />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -779,6 +907,24 @@ const AuthCard = React.memo(({
                 value={registerData.password}
                 onChange={handleRegisterChange}
                 className={`form-input ${errors.password ? 'error' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem 0.875rem 3rem',
+                  fontSize: '0.9375rem',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'white',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  height: '52px',
+                  lineHeight: 1.5,
+                  color: '#171717',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  paddingRight: '3rem'
+                }}
                 disabled={loading}
                 autoComplete="new-password"
               />
@@ -787,6 +933,22 @@ const AuthCard = React.memo(({
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
+                style={{
+                  position: 'absolute',
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#A3A3A3',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 3,
+                  transition: 'color 0.2s ease'
+                }}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -795,10 +957,23 @@ const AuthCard = React.memo(({
           </div>
 
           <div className="form-group">
-            <div className="input-wrapper">
-              <div className="input-icon">
-                <Lock size={18} />
-              </div>
+            <div className="input-wrapper" style={{
+              position: 'relative',
+              width: '100%',
+              marginBottom: '1rem'
+            }}>
+              <Lock 
+                size={18} 
+                className="input-icon" 
+                style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#A3A3A3',
+                  zIndex: 2
+                }} 
+              />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 name="confirmPassword"
@@ -806,6 +981,24 @@ const AuthCard = React.memo(({
                 value={registerData.confirmPassword}
                 onChange={handleRegisterChange}
                 className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem 1rem 0.875rem 3rem',
+                  fontSize: '0.9375rem',
+                  border: '2px solid #E5E5E5',
+                  borderRadius: '12px',
+                  transition: 'all 0.3s ease',
+                  backgroundColor: 'white',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                  height: '52px',
+                  lineHeight: 1.5,
+                  color: '#171717',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  paddingRight: '3rem'
+                }}
                 disabled={loading}
                 autoComplete="new-password"
               />
@@ -814,6 +1007,22 @@ const AuthCard = React.memo(({
                 className="password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 tabIndex="-1"
+                style={{
+                  position: 'absolute',
+                  right: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#A3A3A3',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 3,
+                  transition: 'color 0.2s ease'
+                }}
               >
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -836,18 +1045,18 @@ const AuthCard = React.memo(({
             )}
           </button>
         </form>
-      </div>
 
-      <div className="auth-switch">
-        <p>
-          {activeTab === 'login' ? "Don't have an account? " : "Already have an account? "}
-          <button 
-            onClick={() => onTabChange(activeTab === 'login' ? 'register' : 'login')}
-            className="auth-switch-link"
-          >
-            {activeTab === 'login' ? 'Register here' : 'Sign in'}
-          </button>
-        </p>
+        <div className="auth-switch">
+          <p>
+            Already have an account?{' '}
+            <button 
+              onClick={() => onTabChange('login')}
+              className="auth-switch-link"
+            >
+              Sign in
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -927,8 +1136,14 @@ const FeatureCard = React.memo(({ feature, index }) => {
   return (
     <div className="feature-card-premium" style={{ animationDelay: `${index * 0.1}s` }}>
       <div className="feature-card-inner">
-        <div className={`feature-icon-container bg-gradient-to-br ${feature.gradient}`}>
-          <IconComponent className={`feature-icon-premium ${feature.iconColor}`} />
+        <div 
+          className={`feature-icon-container bg-gradient-to-br ${feature.gradient}`}
+          style={{ backgroundColor: `${feature.iconColor}15` }}
+        >
+          <IconComponent 
+            className="feature-icon-premium" 
+            style={{ color: feature.iconColor }}
+          />
           <div className="icon-glow"></div>
         </div>
         <h3 className="feature-title-premium">{feature.title}</h3>
@@ -1186,4 +1401,4 @@ const Footer = React.memo(({ links }) => {
 
 Footer.displayName = 'Footer';
 
-export default Landing
+export default Landing;
