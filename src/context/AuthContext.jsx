@@ -288,12 +288,46 @@ export const AuthProvider = ({ children }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Handle profile picture upload
+      let profilePictureUrl = user?.profilePicture;
+      
+      if (profileData.profilePicture instanceof File) {
+        // In a real app, this would upload to a server/cloud storage
+        // For now, we'll use a local data URL
+        const reader = new FileReader();
+        profilePictureUrl = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(profileData.profilePicture);
+        });
+        
+        // Remove the file object from profileData before saving
+        const { profilePicture, ...restData } = profileData;
+        profileData = restData;
+      }
+      
+      // Create a new object with all properties to ensure React detects the change
       const updatedUser = {
-        ...user,
+        userId: user.userId,
+        schoolId: user.schoolId,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        age: user.age,
+        gender: user.gender,
+        address: user.address,
+        dateOfBirth: user.dateOfBirth,
+        createdAt: user.createdAt,
         ...profileData,
+        profilePicture: profilePictureUrl,
         updatedAt: new Date().toISOString()
       };
       
+      // Save to localStorage immediately BEFORE state update
+      localStorage.setItem('medconnect_user', JSON.stringify(updatedUser));
+      
+      // Update state to trigger re-render across all components
       if (isMounted.current) {
         setUser(updatedUser);
       }

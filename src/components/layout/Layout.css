@@ -467,6 +467,15 @@
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(139, 26, 26, 0.25);
   transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.user-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .user-menu:hover .user-avatar {

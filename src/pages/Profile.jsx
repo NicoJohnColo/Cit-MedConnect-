@@ -3,9 +3,9 @@
 // src/pages/Profile.jsx
 // ============================================
 
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo, useRef } from 'react';
 import useAuth from '../hooks/useAuth';
-import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, CheckCircle, AlertCircle, Camera, Upload, Trash2 } from 'lucide-react';
 import { Button, Input, Select, Card, Alert } from '../components/common';
 import './Profile.css';
 
@@ -19,6 +19,12 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  // Profile picture state
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   
   // ✅ useMemo: Initial form data from user
   const initialFormData = useMemo(() => ({
@@ -77,6 +83,78 @@ const Profile = () => {
     setMessage({ type: '', text: '' });
   }, [initialFormData]);
 
+  // ✅ useCallback: Handle image selection
+  const handleImageSelect = useCallback((e) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'Please select a valid image file' });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Image size must be less than 5MB' });
+      return;
+    }
+    
+    setSelectedImage(file);
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    
+    setMessage({ type: '', text: '' });
+  }, []);
+
+  // ✅ useCallback: Handle image upload
+  const handleImageUpload = useCallback(async () => {
+    if (!selectedImage) return;
+    
+    setUploadingImage(true);
+    setMessage({ type: '', text: '' });
+    
+    try {
+      const result = await updateProfile({ profilePicture: selectedImage });
+      
+      if (result.success) {
+        setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
+        // Clear the selected image and preview after successful upload
+        // The avatar will now show user.profilePicture from the updated user object
+        setSelectedImage(null);
+        setImagePreview(null);
+        
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to upload profile picture' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'An error occurred while uploading. Please try again.' });
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [selectedImage, updateProfile]);
+
+  // ✅ useCallback: Remove selected image
+  const handleRemoveImage = useCallback(() => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
   // ============================================
   // COMPUTED VALUES
   // ============================================
@@ -117,8 +195,61 @@ const Profile = () => {
         <Card className="profile-card">
           <div className="profile-avatar-section">
             <div className="profile-avatar-large">
-              {userInitials}
+              {imagePreview || user?.profilePicture ? (
+                <img 
+                  src={imagePreview || user?.profilePicture} 
+                  alt="Profile" 
+                  className="profile-avatar-image"
+                />
+              ) : (
+                userInitials
+              )}
+              
+              {/* Upload Image Button Overlay */}
+              <button 
+                className="avatar-upload-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                title="Change profile picture"
+              >
+                <Camera size={20} />
+              </button>
+              
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                style={{ display: 'none' }}
+              />
             </div>
+            
+            {/* Upload/Remove Buttons */}
+            {selectedImage && (
+              <div className="avatar-actions">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Upload}
+                  onClick={handleImageUpload}
+                  loading={uploadingImage}
+                  disabled={uploadingImage}
+                >
+                  Upload Picture
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={handleRemoveImage}
+                  disabled={uploadingImage}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
+            
             <div className="profile-avatar-info">
               <h2>{displayName}</h2>
               <p className="profile-role">{user?.role || 'Student'}</p>

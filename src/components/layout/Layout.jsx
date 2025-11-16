@@ -149,7 +149,17 @@ const Layout = ({ children }) => {
             </button>
 
             <div className="user-menu" onClick={() => navigate('/profile')}>
-              <div className="user-avatar">{userInitials}</div>
+              <div className="user-avatar">
+                {user?.profilePicture ? (
+                  <img 
+                    src={user.profilePicture} 
+                    alt="Profile" 
+                    className="user-avatar-image"
+                  />
+                ) : (
+                  userInitials
+                )}
+              </div>
               <div className="user-info">
                 <div className="user-name">{userFullName}</div>
                 <div className="user-role">{isStaff ? 'Staff' : 'Student'}</div>
