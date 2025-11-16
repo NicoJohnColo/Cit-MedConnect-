@@ -1101,10 +1101,6 @@ const FeaturesSection = React.memo(({ features }) => {
     <section className="features-section" id="features">
       <div className="features-container">
         <div className="section-header-premium">
-          <div className="section-badge">
-            <Zap className="section-badge-icon" />
-            <span>Powerful Features</span>
-          </div>
           <h2 className="section-title-premium">
             Everything You Need,
             <span className="title-accent"> Nothing You Don't</span>
@@ -1148,10 +1144,10 @@ const FeatureCard = React.memo(({ feature, index }) => {
         </div>
         <h3 className="feature-title-premium">{feature.title}</h3>
         <p className="feature-description-premium">{feature.description}</p>
-        <button className="feature-link">
+         {/*<button className="feature-link">
           Learn more
           <ArrowRight className="feature-link-icon" />
-        </button>
+        </button>*/}
       </div>
     </div>
   );
@@ -1258,10 +1254,6 @@ const TestimonialsSection = React.memo(({ testimonials }) => {
     <section className="testimonials-section" id="testimonials">
       <div className="testimonials-container">
         <div className="section-header-premium">
-          <div className="section-badge">
-            <Star className="section-badge-icon" />
-            <span>Testimonials</span>
-          </div>
           <h2 className="section-title-premium">
             Loved by Healthcare
             <span className="title-accent"> Professionals</span>
