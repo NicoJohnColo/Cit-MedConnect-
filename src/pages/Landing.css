@@ -1105,81 +1105,6 @@ body {
 }
 
 /* ============================================
-   FLOATING CARDS
-   ============================================ */
-
-.floating-card {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.06);
-}
-
-.floating-card-1 {
-  top: 15%;
-  right: -15%;
-  animation: floatCard 6s ease-in-out infinite;
-}
-
-.floating-card-2 {
-  bottom: 15%;
-  left: -15%;
-  animation: floatCard 7s ease-in-out infinite 1s;
-}
-
-@keyframes floatCard {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
-}
-
-.floating-icon {
-  width: 32px;
-  height: 32px;
-  color: #8B1A1A;
-}
-
-.pulse-icon {
-  animation: pulseScale 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  transform-origin: center;
-}
-
-@keyframes pulseScale {
-  0%, 100% { 
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% { 
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-}
-
-.floating-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.floating-label {
-  font-size: 0.75rem;
-  color: #737373;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.floating-value {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #171717;
-}
-
-/* ============================================
    TRUST BADGES
    ============================================ */
 
@@ -1995,14 +1920,6 @@ body {
   .hero-actions,
   .hero-social-proof {
     justify-content: center;
-  }
-
-  .floating-card-1 {
-    right: -5%;
-  }
-
-  .floating-card-2 {
-    left: -5%;
   }
 
   .benefits-content {
