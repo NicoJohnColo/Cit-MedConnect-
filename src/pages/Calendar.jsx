@@ -154,6 +154,8 @@ const Calendar = () => {
       <Card className="calendar-controls">
         <button className="nav-btn" onClick={previousWeek}>
           <ChevronLeft size={14} />
+        <button className="nav-btn" onClick={previousWeek} aria-label="Previous week">
+          <ChevronLeft size={24} />
         </button>
         
         <div className="calendar-title">
@@ -177,6 +179,8 @@ const Calendar = () => {
 
         <button className="nav-btn" onClick={nextWeek}>
           <ChevronRight size={14} />
+        <button className="nav-btn" onClick={nextWeek} aria-label="Next week">
+          <ChevronRight size={24} />
         </button>
       </Card>
 
