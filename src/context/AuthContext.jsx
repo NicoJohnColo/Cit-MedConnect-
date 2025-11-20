@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
   // ============================================
   
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sessionExpiry, setSessionExpiry] = useState(null);
   
@@ -37,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   // ============================================
   
   const isAuthenticated = useMemo(() => {
-    return user !== null && user !== undefined;
+    return user !== null && user !== undefined && user.isAuthenticated === true;
   }, [user]);
   
   const isStaff = useMemo(() => {
@@ -144,8 +143,6 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error('Error initializing auth:', err);
         clearAuthStorage();
-      } finally {
-        setLoading(false);
       }
     };
     
@@ -157,7 +154,6 @@ export const AuthProvider = ({ children }) => {
         clearTimeout(sessionTimeoutRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ============================================
@@ -180,7 +176,6 @@ export const AuthProvider = ({ children }) => {
   // ============================================
   
   const login = useCallback(async (schoolId, password, rememberMe = false) => {
-    setLoading(true);
     setError(null);
     
     try {
@@ -213,27 +208,31 @@ export const AuthProvider = ({ children }) => {
       const expiryDuration = rememberMe ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
       const expiry = new Date(Date.now() + expiryDuration);
       
-      // Save to localStorage FIRST (synchronously)
-      localStorage.setItem('medconnect_user', JSON.stringify(foundUser));
+      // Create the user object with all required fields
+      const userToSave = {
+        ...foundUser,
+        isAuthenticated: true
+      };
+      
+      // Save to localStorage
+      localStorage.setItem('medconnect_user', JSON.stringify(userToSave));
       localStorage.setItem('medconnect_session_expiry', expiry.toISOString());
       
-      // Then update state
+      // Update state
       if (isMounted.current) {
-        setUser(foundUser);
+        setUser(userToSave);
         setSessionExpiry(expiry);
         startSessionTimer(expiry);
-        setLoading(false);
       }
       
-      // Create audit log (don't wait for it)
+      // Create audit log
       createAuditLog('LOGIN', 'user', foundUser.userId, { schoolId }).catch(console.error);
       
-      return { success: true, user: foundUser };
+      return { success: true, user: userToSave };
       
     } catch (err) {
       const errorMessage = err.message || 'Login failed. Please try again.';
       setError(errorMessage);
-      setLoading(false);
       return { success: false, error: errorMessage };
     }
   }, [createAuditLog, startSessionTimer]);
@@ -282,7 +281,6 @@ export const AuthProvider = ({ children }) => {
   // ============================================
   
   const updateProfile = useCallback(async (profileData) => {
-    setLoading(true);
     setError(null);
     
     try {
@@ -334,13 +332,11 @@ export const AuthProvider = ({ children }) => {
       
       await createAuditLog('UPDATE', 'user', user.userId, profileData);
       
-      setLoading(false);
       return { success: true, user: updatedUser };
       
     } catch (err) {
       const errorMessage = err.message || 'Failed to update profile';
       setError(errorMessage);
-      setLoading(false);
       return { success: false, error: errorMessage };
     }
   }, [user, createAuditLog]);
@@ -388,9 +384,7 @@ export const AuthProvider = ({ children }) => {
   
   const contextValue = useMemo(() => ({
     user,
-    loading,
     error,
-    sessionExpiry,
     isAuthenticated,
     isStaff,
     isStudent,
@@ -401,12 +395,11 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     register,
     createAuditLog,
-    setError
+    setError,
+    sessionExpiry
   }), [
     user,
-    loading,
     error,
-    sessionExpiry,
     isAuthenticated,
     isStaff,
     isStudent,

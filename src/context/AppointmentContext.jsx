@@ -112,7 +112,8 @@ export const AppointmentProvider = ({ children }) => {
   // INITIALIZE DATA - useEffect
   // Initialize with generated time slots
   useEffect(() => {
-    const initData = () => {
+    const initData = async () => {
+      setLoading(true);
       try {
         console.log('Initializing appointment data...');
         
@@ -176,6 +177,8 @@ export const AppointmentProvider = ({ children }) => {
       } catch (err) {
         console.error('Failed to initialize appointment data:', err);
         setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
     

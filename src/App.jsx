@@ -27,16 +27,8 @@ import Layout from './components/layout/Layout';
 // ============================================
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return <Navigate to="/" state={{ from: location }} replace />;
@@ -50,16 +42,8 @@ const ProtectedRoute = ({ children }) => {
 // ============================================
 
 const PublicRoute = ({ children }) => {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-      </div>
-    );
-  }
 
   if (isAuthenticated) {
     const from = location.state?.from?.pathname || '/dashboard';

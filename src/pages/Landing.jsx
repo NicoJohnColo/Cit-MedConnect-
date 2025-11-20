@@ -169,7 +169,7 @@ const Landing = () => {
       if (result.success) {
         console.log('Login successful, navigating to dashboard');
         setTimeout(() => {
-          navigate('/dashboard', { replace: true });
+          window.location.href = '/dashboard';
         }, 100);
       } else {
         setServerError(result.error || 'Login failed. Please try again.');
@@ -180,7 +180,7 @@ const Landing = () => {
     } finally {
       setLoading(false);
     }
-  }, [loginData, login, navigate, validateLogin]);
+  }, [loginData, login, validateLogin]);
 
   // ============================================
   // REGISTER HANDLERS
