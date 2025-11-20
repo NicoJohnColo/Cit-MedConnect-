@@ -496,7 +496,6 @@ const Navigation = React.memo(({ activeTab, onTabChange, onNavLinkClick, isScrol
             className={`nav-btn nav-btn-primary ${activeTab === 'register' ? 'active' : ''}`}
           >
             Register
-            <ArrowRight className="btn-icon-sm" />
           </button>
         </div>
       </div>
