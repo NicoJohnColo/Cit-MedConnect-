@@ -1,27 +1,25 @@
-🏥 Medical Appointment System
+🏥 CitMedConnect
 
-This is a React-based web application that allows students to book clinic appointments and allows staff to manage medical records, time slots, and notifications.
+CitMedConnect is a React-based medical appointment and records management system designed for students and clinic staff. It streamlines clinic operations by providing an efficient way to book appointments, manage medical records, handle time slots, and send notifications—all in one platform.
 
-The app includes two main user roles:
+👩‍🎓 For Students
 
-👩‍🎓 Students
-
-Book available appointment slots
+Book clinic appointments
 
 View, cancel, or reschedule appointments
 
-View medical records
+Access medical records
 
-Receive notifications
+Receive real-time notifications
 
-🧑‍⚕️ Staff
+🧑‍⚕️ For Staff
 
-Manage student medical records
+Manage student medical records (create, update, view, delete)
 
-Create and update available time slots
+Create and manage time slots
 
 View all appointments and update their status
 
-Send notifications to students
+Send notifications directly to students
 
-The system uses React hooks (useState, useEffect, useContext, useMemo), reusable components, and context providers to manage global state such as authentication, appointments, and notifications.
+Built with React Hooks (useState, useEffect, useMemo, useContext) and structured with reusable components and context providers, CitMedConnect ensures a clean, scalable, and efficient front-end architecture.
