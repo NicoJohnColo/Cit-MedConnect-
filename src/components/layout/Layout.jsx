@@ -64,6 +64,7 @@ const Layout = ({ children }) => {
     { path: '/medical-records', icon: FileText, label: 'Medical Records' },
     { path: '/notifications', icon: Bell, label: 'Notifications', badge: unreadCount },
     { path: '/calendar', icon: CalendarDays, label: 'Calendar' },
+   
   ];
 
   // ============================================
@@ -131,14 +132,6 @@ const Layout = ({ children }) => {
           </div>
 
           <div className="header-right">
-            <button 
-              className="icon-btn"
-              onClick={() => navigate('/settings')}
-              title="Settings"
-            >
-              <Settings size={20} />
-            </button>
-
             <button 
               className="icon-btn"
               onClick={() => navigate('/notifications')}

@@ -496,7 +496,6 @@ const Navigation = React.memo(({ activeTab, onTabChange, onNavLinkClick, isScrol
             className={`nav-btn nav-btn-primary ${activeTab === 'register' ? 'active' : ''}`}
           >
             Register
-            <ArrowRight className="btn-icon-sm" />
           </button>
         </div>
       </div>
@@ -623,20 +622,6 @@ const HeroSection = React.memo(({
               serverError={serverError}
               success={success}
             />
-            <div className="floating-card floating-card-1">
-              <Activity className="floating-icon" />
-              <div className="floating-content">
-                <span className="floating-label">Active Users</span>
-                <span className="floating-value">2,847 online</span>
-              </div>
-            </div>
-            <div className="floating-card floating-card-2">
-              <Heart className="floating-icon pulse-icon" />
-              <div className="floating-content">
-                <span className="floating-label">Health Score</span>
-                <span className="floating-value">98% Average</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
