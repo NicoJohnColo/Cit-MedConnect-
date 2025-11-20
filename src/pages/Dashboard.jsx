@@ -281,13 +281,15 @@ const Dashboard = () => {
               <div className="empty-state-mini">
                 <Calendar size={48} />
                 <p>No upcoming appointments</p>
-                <Button 
-                  variant="primary" 
-                  size="sm"
-                  onClick={handleBookAppointment}
-                >
-                  {isStaff ? 'View Appointments' : 'Book Now'}
-                </Button>
+                {!isStaff && (
+                  <Button 
+                    variant="primary" 
+                    size="sm"
+                    onClick={handleBookAppointment}
+                  >
+                    Book Now
+                  </Button>
+                )}
               </div>
             )}
           </div>
