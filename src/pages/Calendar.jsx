@@ -153,7 +153,7 @@ const Calendar = () => {
       {/* Calendar Controls */}
       <Card className="calendar-controls">
         <button className="nav-btn" onClick={previousWeek}>
-          <ChevronLeft size={20} />
+          <ChevronLeft size={14} />
         </button>
         
         <div className="calendar-title">
@@ -176,7 +176,7 @@ const Calendar = () => {
         </div>
 
         <button className="nav-btn" onClick={nextWeek}>
-          <ChevronRight size={20} />
+          <ChevronRight size={14} />
         </button>
       </Card>
 
