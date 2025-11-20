@@ -22,7 +22,7 @@ import {
   Edit,
   CalendarClock
 } from 'lucide-react';
-import { Button, Input, Modal, Card, Badge, Alert, LoadingSpinner } from '../components/common';
+import { Button, Input, Modal, Card, Badge, Alert } from '../components/common';
 import './Appointments.css';
 
 const Appointments = () => {
@@ -365,7 +365,7 @@ const Appointments = () => {
   }, []);
 
   if (loading && userAppointments.length === 0) {
-    return <LoadingSpinner fullScreen text="Loading appointments..." />;
+    return null;
   }
 
   return (

@@ -21,7 +21,7 @@ import {
   X,
   Search
 } from 'lucide-react';
-import { Button, Card, Modal, Input, Alert, LoadingSpinner, EmptyState } from '../components/common';
+import { Button, Card, Modal, Input, Alert, EmptyState } from '../components/common';
 import './MedicalRecords.css';
 
 const MedicalRecords = () => {
@@ -250,7 +250,7 @@ const MedicalRecords = () => {
   }, [formData, modalMode, selectedRecord, records, user, logAction]);
 
   if (loading && records.length === 0) {
-    return <LoadingSpinner fullScreen text="Loading medical records..." />;
+    return null;
   }
 
   return (
