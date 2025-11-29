@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuditLog } from '../context/AuditLogContext';
+import useNotificationSender from '../hooks/useNotificationSender';
 import { 
   Bell, 
   CheckCircle, 
@@ -26,7 +27,6 @@ import './Notifications.css';
 const Notifications = () => {
   const location = useLocation();
   const { isStaff } = useAuth();
-  const { logAction } = useAuditLog();
   const { 
     userNotifications,
     unreadNotifications,
@@ -38,6 +38,7 @@ const Notifications = () => {
     clearAll,
     loading
   } = useNotifications();
+  const { sendNotification, loading: sending, error: sendError, clearError } = useNotificationSender();
   
   const [filter, setFilter] = useState('all');
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -101,9 +102,15 @@ const Notifications = () => {
   }, []);
 
   const handleMarkAsRead = useCallback(async (notificationId) => {
+    console.log('Marking notification as read:', notificationId);
     const result = await markAsRead(notificationId);
     if (result.success) {
+      console.log('Successfully marked notification as read');
       setMessage({ type: 'success', text: 'Marked as read' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+    } else {
+      console.error('Failed to mark notification as read:', result.error);
+      setMessage({ type: 'error', text: 'Failed to mark as read' });
       setTimeout(() => setMessage({ type: '', text: '' }), 2000);
     }
   }, [markAsRead]);
@@ -149,34 +156,50 @@ const Notifications = () => {
     setSendForm(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  const handleSendNotification = useCallback(() => {
-    if (!sendForm.title.trim() || !sendForm.message.trim()) {
-      setMessage({ type: 'error', text: 'Please fill in all fields' });
-      return;
+  const handleSendNotification = useCallback(async () => {
+    const result = await sendNotification({
+      title: sendForm.title,
+      message: sendForm.message,
+      target: sendForm.target,
+      type: sendForm.type
+    });
+
+    if (result.success) {
+      setMessage({ 
+        type: 'success', 
+        text: `Notification sent successfully to ${sendForm.target}!` 
+      });
+
+      setShowSendModal(false);
+      setSendForm({
+        target: 'students',
+        title: '',
+        message: '',
+        type: 'info'
+      });
+
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } else {
+      setMessage({ 
+        type: 'error', 
+        text: result.error || 'Failed to send notification' 
+      });
     }
-
-    logAction(
-      'Sent Notification',
-      `Sent "${sendForm.title}" to ${sendForm.target} (Type: ${sendForm.type})`
-    );
-
-    setMessage({ 
-      type: 'success', 
-      text: `Notification sent successfully to ${sendForm.target}!` 
-    });
-
-    setShowSendModal(false);
-    setSendForm({
-      target: 'students',
-      title: '',
-      message: '',
-      type: 'info'
-    });
-
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-  }, [sendForm, logAction]);
+  }, [sendForm, sendNotification]);
 
   const filteredNotifications = useMemo(() => {
+    console.log('Computing filtered notifications:', {
+      filter,
+      totalNotifications: userNotifications.length,
+      unreadCount: unreadNotifications.length,
+      readCount: readNotifications.length,
+      notifications: userNotifications.map(n => ({
+        id: n.notificationId,
+        isRead: n.isRead,
+        title: n.title
+      }))
+    });
+    
     switch (filter) {
       case 'unread':
         return unreadNotifications;
@@ -273,7 +296,7 @@ const Notifications = () => {
               return (
                 <Card 
                   key={notification.notificationId}
-                  className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                  className={`notification-item ${notification.isRead ? 'read' : 'unread'}`}
                 >
                   <div 
                     className="notification-icon"
@@ -437,8 +460,10 @@ const Notifications = () => {
                 variant="primary"
                 onClick={handleSendNotification}
                 icon={Send}
+                disabled={sending}
+                loading={sending}
               >
-                Send Notification
+                {sending ? 'Sending...' : 'Send Notification'}
               </Button>
             </div>
           </div>

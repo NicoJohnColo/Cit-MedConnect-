@@ -154,6 +154,19 @@
   box-shadow: 0 4px 16px rgba(139, 26, 26, 0.12);
 }
 
+.notification-item.read {
+  background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+  border-left: 5px solid #D1D5DB;
+  opacity: 0.8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.notification-item.read:hover {
+  opacity: 1;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 100%);
+  box-shadow: 0 4px 16px rgba(139, 26, 26, 0.1);
+}
+
 .notification-item.unread::before {
   content: '';
   position: absolute;
