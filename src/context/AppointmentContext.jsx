@@ -10,16 +10,12 @@ import React, {
   useCallback, 
   useMemo,
   useRef,
-  useContext
 } from 'react';
 import { useAuth } from './AuthContext';
 import { 
   SampleAppointments, 
-  SampleTimeSlots,
   APPOINTMENT_STATUS,
   generateId,
-  formatDate,
-  formatTime
 } from '../types';
 
 // Generate time slots for the next 30 days, including weekends, 8:00 AM - 8:00 PM with 11:30 AM - 1:30 PM break
@@ -697,24 +693,7 @@ export const AppointmentProvider = ({ children }) => {
     
     // Helpers
     setError
-  }), [
-    appointments,
-    timeSlots,
-    loading,
-    error,
-    userAppointments,
-    availableSlots,
-    upcomingAppointments,
-    appointmentStats,
-    getAvailableSlots,
-    checkSlotAvailability,
-    bookAppointment,
-    getAppointmentDetails,
-    cancelAppointment,
-    rescheduleAppointment,
-    updateAppointmentStatus,
-    createTimeSlot
-  ]);
+  }), [appointments, timeSlots, loading, error, userAppointments, availableSlots, upcomingAppointments, appointmentStats, getAvailableSlots, checkSlotAvailability, bookAppointment, getAppointmentDetails, cancelAppointment, rescheduleAppointment, updateAppointmentStatus, createTimeSlot, resetAllData]);
 
   return (
     <AppointmentContext.Provider value={contextValue}>

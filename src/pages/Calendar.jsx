@@ -7,7 +7,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import useAppointments from '../hooks/useAppointments';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
-import { Button, Card, Badge } from '../components/common';
+import { Button, Card } from '../components/common';
 import './Calendar.css';
 
 const Calendar = () => {

@@ -7,6 +7,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useAppointments from '../hooks/useAppointments';
+import useUsers from '../hooks/useUsers';
 import { useNotifications } from '../context/NotificationContext';
 import { 
   Calendar, 
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, userFullName, isStaff } = useAuth();
   const { upcomingAppointments, appointmentStats, refreshAppointments } = useAppointments();
+  const { users, usersCount, studentsOnly, staffOnly, loading: usersLoading } = useUsers();
   
   // Set up event listener for appointment updates
   useEffect(() => {
@@ -214,40 +216,42 @@ const Dashboard = () => {
       <div className="dashboard-content">
         <div className="dashboard-main">
           {isStaff && (
-            // STAFF VIEW - Quick Actions
-            <Card className="quick-actions-section">
-              <h2 className="section-title">Staff Quick Actions</h2>
-              <div className="actions-grid">
-                <ActionCard 
-                  icon={FileText}
-                  title="Manage Records"
-                  description="Create, update, and view student medical records"
-                  onClick={() => navigate('/medical-records')}
-                  color="#2196F3"
-                />
-                <ActionCard 
-                  icon={Calendar}
-                  title="Manage Slots"
-                  description="Create and manage appointment time slots"
-                  onClick={() => navigate('/appointments', { state: { openSlotManagement: true } })}
-                  color="#4CAF50"
-                />
-                <ActionCard 
-                  icon={Activity}
-                  title="View Appointments"
-                  description="Monitor and manage all appointments"
-                  onClick={() => navigate('/appointments')}
-                  color="#FFC107"
-                />
-                <ActionCard 
-                  icon={Bell}
-                  title="Send Notifications"
-                  description="Broadcast messages to students"
-                  onClick={() => navigate('/notifications', { state: { openSendModal: true } })}
-                  color="#9C27B0"
-                />
-              </div>
-            </Card>
+            <>
+              {/* STAFF VIEW - Quick Actions */}
+              <Card className="quick-actions-section">
+                <h2 className="section-title">Staff Quick Actions</h2>
+                <div className="actions-grid">
+                  <ActionCard 
+                    icon={FileText}
+                    title="Manage Records"
+                    description="Create, update, and view student medical records"
+                    onClick={() => navigate('/medical-records')}
+                    color="#2196F3"
+                  />
+                  <ActionCard 
+                    icon={Calendar}
+                    title="Manage Slots"
+                    description="Create and manage appointment time slots"
+                    onClick={() => navigate('/appointments', { state: { openSlotManagement: true } })}
+                    color="#4CAF50"
+                  />
+                  <ActionCard 
+                    icon={Activity}
+                    title="View Appointments"
+                    description="Monitor and manage all appointments"
+                    onClick={() => navigate('/appointments')}
+                    color="#FFC107"
+                  />
+                  <ActionCard 
+                    icon={Bell}
+                    title="Send Notifications"
+                    description="Broadcast messages to students"
+                    onClick={() => navigate('/notifications', { state: { openSendModal: true } })}
+                    color="#9C27B0"
+                  />
+                </div>
+              </Card>
+            </>
           )}
         </div>
 

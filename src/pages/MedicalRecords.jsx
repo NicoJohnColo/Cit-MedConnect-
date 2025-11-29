@@ -28,10 +28,8 @@ const MedicalRecords = () => {
   const { user, isStaff } = useAuth();
   const { logAction } = useAuditLog();
   const { 
-    userRecords, 
     latestVitalSigns, 
     activePrescriptions,
-    recordStats,
     loading
   } = useMedicalRecords();
   
