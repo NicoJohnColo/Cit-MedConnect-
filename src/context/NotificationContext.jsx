@@ -1,400 +1,420 @@
-// ============================================
-// ENHANCED NOTIFICATION CONTEXT
-// With Toast Notifications & Student-Only Reception
-// ============================================
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import useAuth from '../hooks/useAuth';
 
-import React, { 
-  createContext, 
-  useState, 
-  useEffect, 
-  useCallback, 
-  useMemo,
-  useRef,
-  useContext
-} from 'react';
-import { useAuth } from './AuthContext';
-import { NOTIFICATION_TYPES, generateId } from '../types';
+// Action types
+const NOTIFICATION_ACTIONS = {
+  SET_LOADING: 'SET_LOADING',
+  SET_NOTIFICATIONS: 'SET_NOTIFICATIONS',
+  ADD_NOTIFICATION: 'ADD_NOTIFICATION',
+  UPDATE_NOTIFICATION: 'UPDATE_NOTIFICATION',
+  REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
+  SET_ERROR: 'SET_ERROR',
+  CLEAR_ERROR: 'CLEAR_ERROR'
+};
 
-const NotificationContext = createContext(null);
+// Initial state
+const initialState = {
+  userNotifications: [],
+  loading: false,
+  error: null,
+  unreadCount: 0
+};
 
-/**
- * NOTIFICATION PROVIDER
- * Handles notification creation, display, and management
- * Rule: Only Staff can send, Students receive
- */
-export const NotificationProvider = ({ children }) => {
-  const { user, createAuditLog } = useAuth();
-  const isMounted = useRef(true);
-
-  // ============================================
-  // STATE MANAGEMENT
-  // ============================================
-  
-  const [notifications, setNotifications] = useState([]);
-  const [toasts, setToasts] = useState([]); // For temporary toast notifications
-  const [loading, setLoading] = useState(false);
-
-  // ============================================
-  // INITIALIZE & EVENT LISTENERS
-  // ============================================
-  
-  useEffect(() => {
-    // Load from localStorage
-    const stored = localStorage.getItem('medconnect_notifications');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setNotifications(parsed);
-      } catch (err) {
-        console.error('Failed to parse notifications:', err);
-      }
-    }
+// Reducer
+const notificationReducer = (state, action) => {
+  switch (action.type) {
+    case NOTIFICATION_ACTIONS.SET_LOADING:
+      return { ...state, loading: action.payload };
     
-    // Listen for appointment events
-    const handleAppointmentBooked = (event) => {
-      const appointment = event.detail;
-      
-      // Only create notification for students
-      if (user?.role === 'student') {
-        addNotification({
-          type: NOTIFICATION_TYPES.SUCCESS,
-          title: 'Appointment Confirmed',
-          message: `Your appointment has been confirmed for ${new Date(appointment.scheduledDate).toLocaleDateString()} at ${appointment.scheduledTime}`,
-          relatedEntity: appointment.appointmentId
-        });
-        
-        // Show toast notification
-        showToast({
-          type: 'success',
-          message: 'Appointment booked successfully!'
-        });
-      }
-    };
+    case NOTIFICATION_ACTIONS.SET_NOTIFICATIONS:
+      return { 
+        ...state, 
+        userNotifications: action.payload,
+        unreadCount: action.payload.filter(n => !n.isRead).length
+      };
     
-    const handleAppointmentCancelled = (event) => {
-      const appointment = event.detail;
-      
-      // Only create notification for students
-      if (user?.role === 'student') {
-        addNotification({
-          type: NOTIFICATION_TYPES.WARNING,
-          title: 'Appointment Cancelled',
-          message: `Your appointment for ${new Date(appointment.scheduledDate).toLocaleDateString()} has been cancelled`,
-          relatedEntity: appointment.appointmentId
-        });
-        
-        // Show toast notification
-        showToast({
-          type: 'warning',
-          message: 'Appointment cancelled'
-        });
-      }
-    };
+    case NOTIFICATION_ACTIONS.ADD_NOTIFICATION:
+      return {
+        ...state,
+        userNotifications: [action.payload, ...state.userNotifications],
+        unreadCount: action.payload.isRead ? state.unreadCount : state.unreadCount + 1
+      };
     
-    window.addEventListener('appointmentBooked', handleAppointmentBooked);
-    window.addEventListener('appointmentCancelled', handleAppointmentCancelled);
+    case NOTIFICATION_ACTIONS.UPDATE_NOTIFICATION:
+      const updatedNotifications = state.userNotifications.map(notification => {
+        if (notification.notificationId === action.payload.notificationId) {
+          // Merge the existing notification with the updated data
+          const updatedNotification = { ...notification, ...action.payload };
+          console.log('Updating notification:', {
+            original: notification,
+            update: action.payload,
+            result: updatedNotification
+          });
+          return updatedNotification;
+        }
+        return notification;
+      });
+      const updatedUnreadCount = updatedNotifications.filter(n => !n.isRead).length;
+      console.log('Updated notifications count:', {
+        total: updatedNotifications.length,
+        unread: updatedUnreadCount,
+        read: updatedNotifications.length - updatedUnreadCount
+      });
+      return {
+        ...state,
+        userNotifications: updatedNotifications,
+        unreadCount: updatedUnreadCount
+      };
     
-    return () => {
-      isMounted.current = false;
-      window.removeEventListener('appointmentBooked', handleAppointmentBooked);
-      window.removeEventListener('appointmentCancelled', handleAppointmentCancelled);
-    };
-  }, [user]);
-  
-  // Auto-save to localStorage
-  useEffect(() => {
-    if (notifications.length > 0) {
-      localStorage.setItem('medconnect_notifications', JSON.stringify(notifications));
-    }
-  }, [notifications]);
-
-  // ============================================
-  // COMPUTED VALUES
-  // ============================================
-  
-  const userNotifications = useMemo(() => {
-    if (!user) return [];
-    
-    // Students see their own notifications + broadcasts
-    if (user.role === 'student') {
-      return notifications.filter(n => 
-        n.userId === user.userId || n.userId === 'all'
+    case NOTIFICATION_ACTIONS.REMOVE_NOTIFICATION:
+      const filteredNotifications = state.userNotifications.filter(
+        notification => notification.notificationId !== action.payload
       );
+      const removedUnreadCount = filteredNotifications.filter(n => !n.isRead).length;
+      return {
+        ...state,
+        userNotifications: filteredNotifications,
+        unreadCount: removedUnreadCount
+      };
+    
+    case NOTIFICATION_ACTIONS.SET_ERROR:
+      return { ...state, error: action.payload, loading: false };
+    
+    case NOTIFICATION_ACTIONS.CLEAR_ERROR:
+      return { ...state, error: null };
+    
+    default:
+      return state;
+  }
+};
+
+// Context
+const NotificationContext = createContext();
+
+// Provider component
+export const NotificationProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(notificationReducer, initialState);
+  const { user } = useAuth();
+  const schoolId = user?.schoolId;
+  const userRole = user?.role;
+
+  // API base URL
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+  // Set loading state
+  const setLoading = (loading) => {
+    dispatch({ type: NOTIFICATION_ACTIONS.SET_LOADING, payload: loading });
+  };
+
+  // Set error state
+  const setError = (error) => {
+    dispatch({ type: NOTIFICATION_ACTIONS.SET_ERROR, payload: error });
+  };
+
+  // Clear error state
+  const clearError = () => {
+    dispatch({ type: NOTIFICATION_ACTIONS.CLEAR_ERROR });
+  };
+
+  // Fetch user notifications
+  const fetchUserNotifications = useCallback(async () => {
+    console.log('fetchUserNotifications called:', { schoolId, userRole });
+    
+    if (!schoolId || !userRole) {
+      console.log('Missing required data:', { schoolId, userRole });
+      return;
     }
-    
-    // Staff see all notifications (for management purposes)
-    return notifications;
-  }, [notifications, user]);
-  
-  const unreadCount = useMemo(() => {
-    return userNotifications.filter(n => !n.isRead).length;
-  }, [userNotifications]);
-  
-  const unreadNotifications = useMemo(() => {
-    return userNotifications.filter(n => !n.isRead);
-  }, [userNotifications]);
-  
-  const readNotifications = useMemo(() => {
-    return userNotifications.filter(n => n.isRead);
-  }, [userNotifications]);
 
-  // ============================================
-  // TOAST NOTIFICATIONS
-  // ============================================
-  
-  /**
-   * Show temporary toast notification
-   */
-  const showToast = useCallback((toastData) => {
-    const toast = {
-      id: generateId('TOAST'),
-      type: toastData.type || 'info',
-      message: toastData.message,
-      duration: toastData.duration || 4000,
-      createdAt: Date.now()
-    };
-    
-    setToasts(prev => [...prev, toast]);
-    
-    // Auto-remove after duration
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== toast.id));
-    }, toast.duration);
-    
-    return toast.id;
-  }, []);
-  
-  /**
-   * Manually dismiss toast
-   */
-  const dismissToast = useCallback((toastId) => {
-    setToasts(prev => prev.filter(t => t.id !== toastId));
-  }, []);
-
-  // ============================================
-  // NOTIFICATION OPERATIONS
-  // ============================================
-  
-  /**
-   * ADD NOTIFICATION
-   * Creates a new notification for user(s)
-   * Only students receive notifications
-   */
-  const addNotification = useCallback(async (notificationData) => {
     try {
-      // Determine recipient
-      let recipientId = notificationData.userId || 'all';
+      setLoading(true);
+      clearError();
       
-      // If current user is staff and no specific recipient, broadcast to all students
-      if (user?.role === 'staff' && !notificationData.userId) {
-        recipientId = 'all';
-      }
+      console.log('Fetching notifications from:', `${API_URL}/notifications/user/${schoolId}/role/${userRole}`);
       
-      // If current user is student, notification is for them
-      if (user?.role === 'student') {
-        recipientId = user.userId;
-      }
-      
-      const newNotification = {
-        notificationId: generateId('NOT'),
-        userId: recipientId,
-        type: notificationData.type || NOTIFICATION_TYPES.INFO,
-        title: notificationData.title,
-        message: notificationData.message,
-        isRead: false,
-        relatedEntity: notificationData.relatedEntity || '',
-        createdAt: new Date().toISOString(),
-        sentBy: user?.userId || 'SYSTEM'
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
       };
       
-      setNotifications(prev => [newNotification, ...prev]);
-      
-      // Create audit log
-      if (user) {
-        await createAuditLog('CREATE', 'notification', newNotification.notificationId, notificationData);
+      // Add Authorization header only if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        console.log('Using token authentication');
+      } else {
+        console.log('No token found, proceeding without authentication');
       }
       
-      return { success: true, data: newNotification };
-    } catch (err) {
-      console.error('Failed to add notification:', err);
-      return { success: false, error: err.message };
-    }
-  }, [user, createAuditLog]);
-  
-  /**
-   * MARK AS READ
-   */
-  const markAsRead = useCallback(async (notificationId) => {
-    try {
-      setNotifications(prev => prev.map(n =>
-        n.notificationId === notificationId
-          ? { ...n, isRead: true }
-          : n
-      ));
-      
-      if (user) {
-        await createAuditLog('UPDATE', 'notification', notificationId, { isRead: true });
+      const response = await axios.get(
+        `${API_URL}/notifications/user/${schoolId}/role/${userRole}`,
+        { headers }
+      );
+
+      console.log('Notifications response:', response.data);
+
+      if (response.data) {
+        dispatch({ 
+          type: NOTIFICATION_ACTIONS.SET_NOTIFICATIONS, 
+          payload: response.data 
+        });
+        console.log('Notifications fetched successfully:', response.data.length, 'notifications');
       }
-      
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setError(error.response?.data?.message || 'Failed to fetch notifications');
+    } finally {
+      setLoading(false);
     }
-  }, [user, createAuditLog]);
-  
-  /**
-   * MARK ALL AS READ
-   */
-  const markAllAsRead = useCallback(async () => {
+  }, [schoolId, userRole, API_URL, setLoading, clearError, dispatch, setError]);
+
+  // Mark notification as read
+  const markAsRead = async (notificationId) => {
     try {
-      setNotifications(prev => prev.map(n =>
-        (n.userId === user?.userId || n.userId === 'all')
-          ? { ...n, isRead: true }
-          : n
-      ));
+      clearError();
       
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }, [user]);
-  
-  /**
-   * DELETE NOTIFICATION
-   */
-  const deleteNotification = useCallback(async (notificationId) => {
-    try {
-      setNotifications(prev => prev.filter(n => n.notificationId !== notificationId));
-      
-      if (user) {
-        await createAuditLog('DELETE', 'notification', notificationId, {});
-      }
-      
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }, [user, createAuditLog]);
-  
-  /**
-   * CLEAR ALL NOTIFICATIONS
-   */
-  const clearAll = useCallback(async () => {
-    try {
-      setNotifications(prev => prev.filter(n => 
-        n.userId !== user?.userId && n.userId !== 'all'
-      ));
-      
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }, [user]);
-  
-  /**
-   * BROADCAST NOTIFICATION (Staff Only)
-   * Flow: Staff Dashboard → Send Notifications → Broadcast to Students
-   */
-  const broadcastNotification = useCallback(async (notificationData) => {
-    setLoading(true);
-    try {
-      // Only staff can broadcast
-      if (user?.role !== 'staff') {
-        throw new Error('Unauthorized: Only staff can send notifications');
-      }
-      
-      const broadcast = {
-        notificationId: generateId('NOT'),
-        userId: 'all', // Broadcast to all students
-        type: notificationData.type || NOTIFICATION_TYPES.INFO,
-        title: notificationData.title,
-        message: notificationData.message,
-        isRead: false,
-        relatedEntity: notificationData.relatedEntity || '',
-        createdAt: new Date().toISOString(),
-        sentBy: user.userId
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
       };
       
-      setNotifications(prev => [broadcast, ...prev]);
+      // Add Authorization header only if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       
-      // Create audit log
-      await createAuditLog('CREATE', 'notification', broadcast.notificationId, {
-        ...notificationData,
-        broadcast: true,
-        sentBy: user.userId
-      });
-      
-      // Show success toast
-      showToast({
-        type: 'success',
-        message: 'Notification sent to all students'
-      });
-      
-      setLoading(false);
-      return { success: true, data: broadcast };
-    } catch (err) {
-      showToast({
-        type: 'error',
-        message: err.message || 'Failed to send notification'
-      });
-      setLoading(false);
-      return { success: false, error: err.message };
-    }
-  }, [user, createAuditLog, showToast]);
+      // Call backend to mark as read
+      const response = await axios.put(
+        `${API_URL}/notifications/${notificationId}/read`,
+        {},
+        { headers }
+      );
 
-  // ============================================
-  // CONTEXT VALUE
-  // ============================================
-  
-  const contextValue = useMemo(() => ({
-    notifications,
-    userNotifications,
+      console.log('Mark as read response:', response.data);
+
+      // Update local state with backend response or fallback
+      const updatedNotification = response.data || { notificationId, isRead: true };
+      
+      dispatch({
+        type: NOTIFICATION_ACTIONS.UPDATE_NOTIFICATION,
+        payload: updatedNotification
+      });
+
+      console.log('Notification marked as read successfully');
+      return { success: true };
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      // Fallback to local update if backend fails
+      dispatch({
+        type: NOTIFICATION_ACTIONS.UPDATE_NOTIFICATION,
+        payload: { notificationId, isRead: true }
+      });
+      console.log('Fallback: Updated notification locally');
+      return { success: true };
+    }
+  };
+
+  // Delete notification
+  const deleteNotification = async (notificationId) => {
+    try {
+      clearError();
+      
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add Authorization header only if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      await axios.delete(
+        `${API_URL}/notifications/${notificationId}`,
+        { headers }
+      );
+
+      dispatch({
+        type: NOTIFICATION_ACTIONS.REMOVE_NOTIFICATION,
+        payload: notificationId
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      setError(error.response?.data?.message || 'Failed to delete notification');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    try {
+      clearError();
+      
+      // Update all notifications locally
+      const updatedNotifications = state.userNotifications.map(notification => ({
+        ...notification,
+        isRead: true
+      }));
+
+      dispatch({
+        type: NOTIFICATION_ACTIONS.SET_NOTIFICATIONS,
+        payload: updatedNotifications
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      setError(error.response?.data?.message || 'Failed to mark all notifications as read');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // Clear all notifications
+  const clearAll = async () => {
+    try {
+      clearError();
+      
+      // Delete all notifications one by one (or implement bulk delete in backend)
+      const deletePromises = state.userNotifications.map(notification => {
+        // Prepare headers
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        
+        // Add Authorization header only if token exists
+        const token = localStorage.getItem('token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return axios.delete(
+          `${API_URL}/notifications/${notification.notificationId}`,
+          { headers }
+        );
+      });
+
+      await Promise.all(deletePromises);
+
+      dispatch({
+        type: NOTIFICATION_ACTIONS.SET_NOTIFICATIONS,
+        payload: []
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      setError(error.response?.data?.message || 'Failed to clear all notifications');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // Send notification to all students (Staff only)
+  const sendNotificationToAllStudents = async (title, message, type = 'info') => {
+    try {
+      clearError();
+      
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add Authorization header only if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await axios.post(
+        `${API_URL}/notifications/broadcast/students`,
+        { title, message },
+        { headers }
+      );
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Error sending notification to students:', error);
+      setError(error.response?.data?.message || 'Failed to send notification to students');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // Send notification to everyone (Staff only)
+  const sendNotificationToEveryone = async (title, message, type = 'info') => {
+    try {
+      clearError();
+      
+      // Prepare headers
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Add Authorization header only if token exists
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await axios.post(
+        `${API_URL}/notifications/broadcast/all`,
+        { title, message },
+        { headers }
+      );
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Error sending notification to everyone:', error);
+      setError(error.response?.data?.message || 'Failed to send notification to everyone');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // Fetch notifications when user changes
+  useEffect(() => {
+    if (schoolId && userRole) {
+      fetchUserNotifications();
+    }
+  }, [schoolId, userRole, fetchUserNotifications]);
+
+  // Computed values
+  const unreadNotifications = state.userNotifications.filter(n => !n.isRead);
+  const readNotifications = state.userNotifications.filter(n => n.isRead);
+
+  const value = {
+    // State
+    userNotifications: state.userNotifications,
     unreadNotifications,
     readNotifications,
-    unreadCount,
-    toasts,
-    loading,
+    unreadCount: state.unreadCount,
+    loading: state.loading,
+    error: state.error,
     
-    addNotification,
+    // Actions
+    fetchUserNotifications,
     markAsRead,
-    markAllAsRead,
     deleteNotification,
-    clearAll,
-    broadcastNotification,
-    showToast,
-    dismissToast
-  }), [
-    notifications,
-    userNotifications,
-    unreadNotifications,
-    readNotifications,
-    unreadCount,
-    toasts,
-    loading,
-    addNotification,
-    markAsRead,
     markAllAsRead,
-    deleteNotification,
     clearAll,
-    broadcastNotification,
-    showToast,
-    dismissToast
-  ]);
+    sendNotificationToAllStudents,
+    sendNotificationToEveryone,
+    clearError
+  };
 
   return (
-    <NotificationContext.Provider value={contextValue}>
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
 };
 
-/**
- * CUSTOM HOOK
- */
+// Hook to use the notification context
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
+    throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
 };
