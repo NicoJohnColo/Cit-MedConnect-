@@ -9,7 +9,7 @@ import useAuth from '../hooks/useAuth';
 import { 
   Settings, Stethoscope, Calendar, Users, Shield, Clock, 
   ChevronRight, Sparkles, Activity, Heart, Zap, Award, 
-  CheckCircle2, ArrowRight, Star, TrendingUp, Globe,
+  CheckCircle2, Star, TrendingUp, Globe,
   User, Lock, Eye, EyeOff, Mail
 } from 'lucide-react';
 import './Landing.css';
@@ -160,7 +160,7 @@ const Landing = () => {
       
       const result = await login(
         loginData.schoolId.trim(),
-        loginData.password || 'demo123',
+        loginData.password,
         loginData.rememberMe
       );
       
@@ -711,7 +711,7 @@ const AuthCard = React.memo(({
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
-                placeholder="Password (optional for demo)"
+                placeholder="Password"
                 value={loginData.password}
                 onChange={handleLoginChange}
                 className={`form-input ${errors.password ? 'error' : ''}`}
@@ -777,23 +777,6 @@ const AuthCard = React.memo(({
           </button>
         </form>
 
-        <div className="demo-info">
-          <p className="demo-title">🎯 Demo Credentials:</p>
-          <div className="demo-credentials">
-            <div className="credential-item">
-              <strong>Student:</strong>
-              <span> School ID: <code>23-2323-233</code></span>
-            </div>
-            <div className="credential-item">
-              <strong>Staff/Doctor:</strong>
-              <span> School ID: <code>D-001</code></span>
-            </div>
-            <p className="demo-note">
-              💡 Password is optional for demo. Any School ID starting with 'D' logs in as Staff, others as Student.
-            </p>
-          </div>
-        </div>
-
         <div className="auth-switch">
           <p>
             Don't have an account?{' '}
@@ -801,7 +784,7 @@ const AuthCard = React.memo(({
               onClick={() => onTabChange('register')}
               className="auth-switch-link"
             >
-              Register here
+              Sign up
             </button>
           </p>
         </div>

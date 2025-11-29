@@ -5,12 +5,12 @@
 
 import React, { useState, useCallback, useMemo, memo, useRef } from 'react';
 import useAuth from '../hooks/useAuth';
-import { User, Mail, Phone, Calendar, MapPin, Edit2, Save, X, CheckCircle, AlertCircle, Camera, Upload, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Edit2, Save, X, CheckCircle, AlertCircle, Camera, Upload, Trash2 } from 'lucide-react';
 import { Button, Input, Select, Card, Alert } from '../components/common';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, updateProfile, userFullName, userInitials } = useAuth();
+  const { user, updateProfile, userInitials } = useAuth();
   
   // ============================================
   // STATE MANAGEMENT
@@ -30,12 +30,9 @@ const Profile = () => {
   const initialFormData = useMemo(() => ({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    email: user?.email || '',
     phone: user?.phone || '',
     age: user?.age || '',
-    gender: user?.gender || '',
-    address: user?.address || '',
-    dateOfBirth: user?.dateOfBirth || ''
+    gender: user?.gender || ''
   }), [user]);
 
   const [formData, setFormData] = useState(initialFormData);
@@ -265,7 +262,7 @@ const Profile = () => {
               </div>
               <div className="reminder-content">
                 <h4>Email Address</h4>
-                <p>{formData.email || 'No email set'}</p>
+                <p>{user?.email || 'No email set'}</p>
               </div>
             </div>
           </div>
@@ -330,16 +327,16 @@ const Profile = () => {
                 placeholder="Last Name"
               />
 
-              {/* Email */}
+              {/* Email - Non-editable */}
               <Input
                 label="Email"
                 name="email"
                 type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                disabled={!isEditing}
+                value={user?.email || ''}
+                disabled={true}
                 placeholder="email@example.com"
                 icon={Mail}
+                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
               />
 
               {/* Phone */}
@@ -352,17 +349,6 @@ const Profile = () => {
                 disabled={!isEditing}
                 placeholder="+1 (555) 123-4567"
                 icon={Phone}
-              />
-
-              {/* Date of Birth */}
-              <Input
-                label="Date of Birth"
-                name="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                icon={Calendar}
               />
 
               {/* Age */}
@@ -393,23 +379,6 @@ const Profile = () => {
                 ]}
                 placeholder="Select Gender"
               />
-
-              {/* Address - Full Width */}
-              <div className="form-group full-width">
-                <label className="form-label">
-                  <MapPin size={16} />
-                  Address
-                </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="form-input"
-                  disabled={!isEditing}
-                  placeholder="Enter complete address"
-                  rows="3"
-                />
-              </div>
             </div>
           </form>
         </Card>

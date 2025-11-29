@@ -8,92 +8,92 @@
  * Represents both Student and Staff users
  */
 export const UserSchema = {
-  userId: "", // Unique identifier
-  schoolId: "", // School ID (e.g., "20-1234" or "D-001")
-  role: "", // "student" | "staff"
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  age: 0,
-  gender: "", // "male" | "female" | "other" | "prefer-not-to-say"
-  address: "",
-  dateOfBirth: "",
-  createdAt: "",
-  updatedAt: ""
+  User_Id: "", // Unique identifier
+  School_Id: "", // School ID (e.g., "20-1234" or "D-001")
+  Role: "", // "student" | "staff"
+  First_Name: "",
+  Last_Name: "",
+  Email: "",
+  Phone: "",
+  Age: 0,
+  Gender: "", // "male" | "female" | "other" | "prefer-not-to-say"
+  Address: "",
+  Date_Of_Birth: "",
+  Created_At: "",
+  Updated_At: ""
 };
 
 /**
- * APPOINTMENT ENTITY SCHEMA
+ * APPOINTMENTS ENTITY SCHEMA
  * Represents a medical appointment
  */
-export const AppointmentSchema = {
-  appointmentId: "", // Unique identifier (e.g., "APT-001")
-  studentId: "", // Foreign key to User
-  staffId: "", // Foreign key to Staff/Doctor
-  slotId: "", // Foreign key to TimeSlot
-  status: "", // "scheduled" | "completed" | "cancelled" | "rescheduled"
-  reason: "", // Reason for appointment
-  symptoms: "", // Patient symptoms
-  notes: "", // Staff notes
-  createdAt: "",
-  updatedAt: "",
-  scheduledDate: "",
-  scheduledTime: ""
+export const AppointmentsSchema = {
+  Appointment_Id: "", // Unique identifier (e.g., "APT-001")
+  Student_Id: "", // Foreign key to User
+  Staff_Id: "", // Foreign key to Staff/Doctor
+  TimeSlot_Id: "", // Foreign key to TimeSlot
+  Status: "", // "scheduled" | "completed" | "cancelled" | "rescheduled"
+  Reason: "", // Reason for appointment
+  Symptoms: "", // Patient symptoms
+  Notes: "", // Staff notes
+  Created_At: "",
+  Updated_At: "",
+  Scheduled_Date: "",
+  Scheduled_Time: ""
 };
 
 /**
  * TIME SLOT ENTITY SCHEMA
  * Represents available appointment time slots
  */
-export const TimeSlotSchema = {
-  slotId: "", // Unique identifier (e.g., "SLOT-001")
-  date: "", // YYYY-MM-DD format
-  time: "", // HH:MM format (24-hour)
-  duration: 30, // Duration in minutes
-  isAvailable: true, // Availability status
-  staffId: "", // Assigned staff member
-  location: "", // "Main Clinic" | "Dental Clinic"
-  createdAt: "",
-  updatedAt: ""
+export const Time_SlotSchema = {
+  TimeSlot_Id: "", // Unique identifier (e.g., "SLOT-001")
+  Slot_Date: "", // YYYY-MM-DD format
+  Slot_Time: "", // HH:MM format (24-hour)
+  Duration: 30, // Duration in minutes
+  Is_Available: true, // Availability status
+  Staff_Id: "", // Assigned staff member
+  Location: "", // "Main Clinic" | "Dental Clinic"
+  Created_At: "",
+  Updated_At: ""
 };
 
 /**
- * MEDICAL RECORD ENTITY SCHEMA
+ * MEDICAL RECORDS ENTITY SCHEMA
  * Represents patient medical records
  */
-export const MedicalRecordSchema = {
-  recordId: "", // Unique identifier (e.g., "MR-001")
-  studentId: "", // Foreign key to Student
-  appointmentId: "", // Foreign key to Appointment
-  diagnosis: "",
-  treatment: "",
-  prescriptions: [], // Array of prescription strings
-  vitalSigns: {
-    bloodPressure: "",
-    heartRate: "",
-    temperature: "",
-    weight: ""
+export const Medical_RecordsSchema = {
+  Record_Id: "", // Unique identifier (e.g., "MR-001")
+  Student_Id: "", // Foreign key to Student
+  Appointment_Id: "", // Foreign key to Appointment
+  Diagnosis: "",
+  Treatment: "",
+  Prescriptions: [], // Array of prescription strings
+  Vital_Signs: {
+    Blood_Pressure: "",
+    Heart_Rate: "",
+    Temperature: "",
+    Weight: ""
   },
-  medicalHistory: "",
-  staffId: "", // Doctor who created the record
-  createdAt: "",
-  updatedAt: ""
+  Medical_History: "",
+  Staff_Id: "", // Doctor who created the record
+  Created_At: "",
+  Updated_At: ""
 };
 
 /**
- * NOTIFICATION ENTITY SCHEMA
+ * NOTIFICATIONS ENTITY SCHEMA
  * Represents system notifications
  */
-export const NotificationSchema = {
-  notificationId: "", // Unique identifier (e.g., "N-001")
-  userId: "", // Target user (or "all" for broadcast)
-  type: "", // "success" | "warning" | "info" | "error"
-  title: "",
-  message: "",
-  isRead: false,
-  relatedEntity: "", // Related appointment/record ID
-  createdAt: ""
+export const NotificationsSchema = {
+  Notification_Id: "", // Unique identifier (e.g., "N-001")
+  User_Id: "", // Target user (or "all" for broadcast)
+  Type: "", // "success" | "warning" | "info" | "error"
+  Title: "",
+  Message: "",
+  Is_Read: false,
+  Related_Entity: "", // Related appointment/record ID
+  Created_At: ""
 };
 
 /**
@@ -101,15 +101,15 @@ export const NotificationSchema = {
  * Tracks all system actions for compliance
  */
 export const AuditLogSchema = {
-  logId: "", // Unique identifier
-  userId: "", // Who performed the action
-  action: "", // "CREATE" | "UPDATE" | "DELETE" | "VIEW"
-  entityType: "", // "appointment" | "record" | "slot" | "notification"
-  entityId: "", // ID of affected entity
-  changes: {}, // JSON object of what changed
-  timestamp: "",
-  ipAddress: "",
-  userAgent: ""
+  Log_Id: "", // Unique identifier
+  User_Id: "", // Who performed the action
+  Action: "", // "CREATE" | "UPDATE" | "DELETE" | "VIEW"
+  Entity_Type: "", // "appointment" | "record" | "slot" | "notification"
+  Entity_Id: "", // ID of affected entity
+  Changes: {}, // JSON object of what changed
+  Timestamp: "",
+  IP_Address: "",
+  User_Agent: ""
 };
 
 // ============================================
