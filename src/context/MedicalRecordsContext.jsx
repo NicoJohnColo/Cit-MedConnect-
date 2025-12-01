@@ -40,34 +40,9 @@ export const MedicalRecordsProvider = ({ children }) => {
   useEffect(() => {
     const initData = () => {
       try {
-        const stored = localStorage.getItem('medconnect_medical_records');
-        if (stored) {
-          setRecords(JSON.parse(stored));
-        } else {
-          // Sample medical records
-          const sampleRecords = [
-            {
-              recordId: 'MR-001',
-              studentId: user?.userId || 'USR-001',
-              appointmentId: 'APT-001',
-              diagnosis: 'Common Cold',
-              treatment: 'Rest and hydration, Paracetamol 500mg',
-              prescriptions: ['Paracetamol 500mg - 3x daily', 'Vitamin C 1000mg - 1x daily'],
-              vitalSigns: {
-                bloodPressure: '120/80',
-                heartRate: '72',
-                temperature: '37.2',
-                weight: '65'
-              },
-              medicalHistory: 'No previous complications',
-              staffId: 'STAFF-001',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ];
-          setRecords(sampleRecords);
-          localStorage.setItem('medconnect_medical_records', JSON.stringify(sampleRecords));
-        }
+        // Start with empty records
+        console.log('Starting with empty medical records list');
+        setRecords([]);
       } catch (err) {
         console.error('Failed to initialize medical records:', err);
         setError(err.message);
@@ -81,13 +56,6 @@ export const MedicalRecordsProvider = ({ children }) => {
     };
   }, [user]);
   
-  // Auto-save to localStorage
-  useEffect(() => {
-    if (records.length > 0) {
-      localStorage.setItem('medconnect_medical_records', JSON.stringify(records));
-    }
-  }, [records]);
-
   // ============================================
   // COMPUTED VALUES
   // ============================================

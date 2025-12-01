@@ -142,7 +142,7 @@ const Landing = () => {
   const validateLogin = useCallback(() => {
     const newErrors = {};
     if (!loginData.schoolId.trim()) {
-      newErrors.schoolId = 'School ID is required';
+      newErrors.schoolId = 'Email is required';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -677,7 +677,7 @@ const AuthCard = React.memo(({
               <input
                 type="text"
                 name="schoolId"
-                placeholder="School ID (e.g., 23-2323-233 or D-001)"
+                placeholder="Email (e.g firstname.lastname@cit.edu)"
                 value={loginData.schoolId}
                 onChange={handleLoginChange}
                 className={`form-input ${errors.schoolId ? 'error' : ''}`}
@@ -742,7 +742,7 @@ const AuthCard = React.memo(({
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
               </button>
             </div>
             {errors.password && <span className="form-error">{errors.password}</span>}
@@ -918,7 +918,7 @@ const AuthCard = React.memo(({
                   transition: 'color 0.2s ease'
                 }}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
               </button>
             </div>
             {errors.password && <span className="form-error">{errors.password}</span>}
