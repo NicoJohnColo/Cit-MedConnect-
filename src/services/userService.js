@@ -225,6 +225,48 @@ export const userService = {
         status: error.response?.status || 404
       };
     }
+  },
+
+  /**
+   * Get user profile by email
+   * GET http://localhost:8080/api/users/profile/{email}
+   */
+  getUserProfile: async (email) => {
+    try {
+      const response = await apiClient.get(`/profile/${encodeURIComponent(email)}`);
+      return {
+        success: true,
+        data: response.data,
+        status: response.status
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Failed to fetch profile',
+        status: error.response?.status || 404
+      };
+    }
+  },
+
+  /**
+   * Update user profile by email
+   * PUT http://localhost:8080/api/users/profile/{email}
+   */
+  updateUserProfile: async (email, updates) => {
+    try {
+      const response = await apiClient.put(`/profile/${encodeURIComponent(email)}`, updates);
+      return {
+        success: true,
+        data: response.data,
+        status: response.status
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Failed to update profile',
+        status: error.response?.status || 400
+      };
+    }
   }
 };
 

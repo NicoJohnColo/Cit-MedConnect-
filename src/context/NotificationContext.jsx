@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 
@@ -98,6 +98,9 @@ export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
   const schoolId = user?.schoolId;
   const userRole = user?.role;
+  
+  // Ref to track if we've already fetched for current user
+  const lastFetchedUser = useRef(`${schoolId}-${userRole}`);
 
   // API base URL
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
@@ -374,10 +377,15 @@ export const NotificationProvider = ({ children }) => {
 
   // Fetch notifications when user changes
   useEffect(() => {
-    if (schoolId && userRole) {
+    const currentUser = `${schoolId}-${userRole}`;
+
+    // Only fetch if user has changed and we haven't already fetched for this user
+    if (schoolId && userRole && !state.loading && currentUser !== lastFetchedUser.current) {
+      console.log('User changed, fetching notifications for:', currentUser);
+      lastFetchedUser.current = currentUser;
       fetchUserNotifications();
     }
-  }, [schoolId, userRole, fetchUserNotifications]);
+  }, [schoolId, userRole]);
 
   // Computed values
   const unreadNotifications = state.userNotifications.filter(n => !n.isRead);
@@ -391,7 +399,7 @@ export const NotificationProvider = ({ children }) => {
     unreadCount: state.unreadCount,
     loading: state.loading,
     error: state.error,
-    
+
     // Actions
     fetchUserNotifications,
     markAsRead,

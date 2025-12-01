@@ -350,6 +350,49 @@ export const AuthProvider = ({ children }) => {
   }, [createAuditLog, startSessionTimer]);
 
   // ============================================
+  // FETCH PROFILE FUNCTION
+  // ============================================
+
+  const fetchProfile = useCallback(async () => {
+    setError(null);
+    
+    try {
+      if (!user?.email) {
+        throw new Error('User email not found');
+      }
+      
+      // Get complete profile data from backend
+      const profileResult = await userService.getUserProfile(user.email);
+      
+      if (!profileResult.success) {
+        throw new Error(profileResult.error || 'Failed to fetch profile');
+      }
+      
+      // Update user object with complete profile data
+      const updatedUser = {
+        ...user,
+        ...profileResult.data,
+        isAuthenticated: true
+      };
+      
+      // Save to localStorage immediately BEFORE state update
+      localStorage.setItem('medconnect_user', JSON.stringify(updatedUser));
+      
+      // Update state to trigger re-render across all components
+      if (isMounted.current) {
+        setUser(updatedUser);
+      }
+      
+      return { success: true, user: updatedUser };
+      
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to fetch profile';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  }, [user]);
+
+  // ============================================
   // UPDATE PROFILE FUNCTION
   // ============================================
 
@@ -357,11 +400,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     
     try {
-      if (!user?.userId) {
-        throw new Error('User not found');
+      if (!user?.email) {
+        throw new Error('User email not found');
       }
       
-      // Handle profile picture upload
+      // Handle profile picture upload separately (not supported by backend profile endpoint)
       let profilePictureUrl = user?.profilePicture;
       
       if (profileData.profilePicture instanceof File) {
@@ -378,22 +421,33 @@ export const AuthProvider = ({ children }) => {
         profileData = restData;
       }
       
-      // Update user in backend
-      const updateData = {
-        ...profileData,
-        profilePicture: profilePictureUrl
-      };
+      // Only send updatable fields to backend (age, phone, gender)
+      const updatableFields = {};
+      if (profileData.age !== undefined && profileData.age !== '') {
+        updatableFields.age = parseInt(profileData.age, 10);
+      }
+      if (profileData.phone !== undefined) {
+        updatableFields.phone = profileData.phone;
+      }
+      if (profileData.gender !== undefined) {
+        updatableFields.gender = profileData.gender;
+      }
       
-      // Update user in backend using schoolId-specific endpoint
-      const updateResult = await userService.updateUserBySchoolId(user.schoolId, updateData);
+      // Update user profile using the new profile endpoint
+      const updateResult = await userService.updateUserProfile(user.email, updatableFields);
       
       if (!updateResult.success) {
         throw new Error(updateResult.error || 'Failed to update profile in backend');
       }
       
-      // Create updated user object with backend response
+      // Get updated profile data from backend response
+      const backendUserData = updateResult.data.user;
+      
+      // Create updated user object combining backend data with local state
       const updatedUser = {
-        ...updateResult.data,
+        ...user,
+        ...backendUserData,
+        profilePicture: profilePictureUrl,
         isAuthenticated: true
       };
       
@@ -405,7 +459,7 @@ export const AuthProvider = ({ children }) => {
         setUser(updatedUser);
       }
       
-      await createAuditLog('UPDATE', 'user', user.userId, profileData);
+      await createAuditLog('UPDATE', 'user', user.userId, updatableFields);
       
       return { success: true, user: updatedUser };
       
@@ -484,6 +538,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     staffLogin,
     updateProfile,
+    fetchProfile,
     register,
     createAuditLog,
     setError,
@@ -500,6 +555,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     staffLogin,
     updateProfile,
+    fetchProfile,
     register,
     createAuditLog,
     sessionExpiry

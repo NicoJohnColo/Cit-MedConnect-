@@ -3,14 +3,14 @@
 // src/pages/Profile.jsx
 // ============================================
 
-import React, { useState, useCallback, useMemo, memo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, memo, useRef, useEffect } from 'react';
 import useAuth from '../hooks/useAuth';
 import { User, Mail, Phone, Edit2, Save, X, CheckCircle, AlertCircle, Camera, Upload, Trash2 } from 'lucide-react';
 import { Button, Input, Select, Card, Alert } from '../components/common';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, updateProfile, userInitials } = useAuth();
+  const { user, updateProfile, userInitials, fetchProfile } = useAuth();
   
   // ============================================
   // STATE MANAGEMENT
@@ -36,6 +36,27 @@ const Profile = () => {
   }), [user]);
 
   const [formData, setFormData] = useState(initialFormData);
+
+  // ============================================
+  // PROFILE DATA FETCHING
+  // ============================================
+  
+  // ✅ useEffect: Fetch complete profile data on component mount
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (user?.email && !isEditing) {
+        try {
+          await fetchProfile();
+        } catch (error) {
+          console.error('Failed to fetch profile data:', error);
+          setMessage({ type: 'error', text: 'Failed to load profile data' });
+          setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        }
+      }
+    };
+
+    loadProfileData();
+  }, [user?.email, fetchProfile, isEditing]);
 
   // ============================================
   // EVENT HANDLERS
@@ -307,24 +328,26 @@ const Profile = () => {
 
           <form id="profile-form" onSubmit={handleSubmit} className="profile-form">
             <div className="form-grid">
-              {/* First Name */}
+              {/* First Name - Non-editable */}
               <Input
                 label="First Name"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                disabled={!isEditing}
+                disabled={true}
                 placeholder="First Name"
+                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
               />
 
-              {/* Last Name */}
+              {/* Last Name - Non-editable */}
               <Input
                 label="Last Name"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                disabled={!isEditing}
+                disabled={true}
                 placeholder="Last Name"
+                style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
               />
 
               {/* Email - Non-editable */}
@@ -347,7 +370,7 @@ const Profile = () => {
                 value={formData.phone}
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                placeholder="+1 (555) 123-4567"
+                placeholder="+69424124412"
                 icon={Phone}
               />
 

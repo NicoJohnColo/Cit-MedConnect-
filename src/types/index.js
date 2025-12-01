@@ -143,51 +143,9 @@ export const SampleUsers = [
     age: 35,
     gender: "female",
     address: "Cebu City, Philippines",
-    dateOfBirth: "1989-08-20",
+    dateOfBirth: "1990-03-20",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-01T00:00:00Z"
-  }
-];
-
-export const SampleAppointments = [
-  {
-    appointmentId: "APT-001",
-    studentId: "USR-001",
-    staffId: "USR-002",
-    slotId: "SLOT-001",
-    status: "scheduled",
-    reason: "Regular Checkup",
-    symptoms: "General wellness check",
-    notes: "",
-    createdAt: "2025-10-20T10:00:00Z",
-    updatedAt: "2025-10-20T10:00:00Z",
-    scheduledDate: "2025-10-22",
-    scheduledTime: "09:00"
-  }
-];
-
-export const SampleTimeSlots = [
-  {
-    slotId: "SLOT-001",
-    date: "2025-10-22",
-    time: "09:00",
-    duration: 30,
-    isAvailable: false,
-    staffId: "USR-002",
-    location: "Main Clinic",
-    createdAt: "2025-10-20T00:00:00Z",
-    updatedAt: "2025-10-20T10:00:00Z"
-  },
-  {
-    slotId: "SLOT-002",
-    date: "2025-10-22",
-    time: "09:30",
-    duration: 30,
-    isAvailable: true,
-    staffId: "USR-002",
-    location: "Main Clinic",
-    createdAt: "2025-10-20T00:00:00Z",
-    updatedAt: "2025-10-20T00:00:00Z"
   }
 ];
 
