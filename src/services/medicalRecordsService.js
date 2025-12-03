@@ -112,6 +112,9 @@ export const medicalRecordsService = {
       
       console.log('Response received:', response.status, response.data);
       
+      // Note: Notification is sent by the backend automatically
+      // No need to send it from frontend to avoid duplicates
+      
       return {
         success: true,
         data: response.data,

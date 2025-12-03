@@ -61,6 +61,21 @@ export const notificationService = {
       { headers: getAuthHeaders() }
     );
     return response.data;
+  },
+
+  // Send notification to a specific user
+  sendNotificationToUser: async (schoolId, title, message, type = 'info') => {
+    const response = await axios.post(
+      `${API_URL}/notifications/send`,
+      { 
+        recipientId: schoolId,
+        title, 
+        message,
+        type 
+      },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
   }
 };
 
