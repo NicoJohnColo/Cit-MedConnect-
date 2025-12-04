@@ -613,24 +613,26 @@ const Appointments = () => {
                         <Eye size={14} />
                       </button>
                       
+                      {/* Reschedule button for both student and staff roles */}
+                      {appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'success' && (
+                        <button 
+                          className="action-btn action-btn-edit"
+                          title="Reschedule"
+                          onClick={() => handleStartReschedule(appointment)}
+                        >
+                          <CalendarClock size={14} />
+                        </button>
+                      )}
+                      
                       {/* Student-only actions */}
                       {!userIsStaff && appointment.status === 'scheduled' && (
-                        <>
-                          <button 
-                            className="action-btn action-btn-edit"
-                            title="Reschedule"
-                            onClick={() => handleStartReschedule(appointment)}
-                          >
-                            <CalendarClock size={14} />
-                          </button>
-                          <button 
-                            className="action-btn action-btn-delete" 
-                            title="Cancel"
-                            onClick={() => handleCancelAppointment(appointment.appointmentId)}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
+                        <button 
+                          className="action-btn action-btn-delete" 
+                          title="Cancel"
+                          onClick={() => handleCancelAppointment(appointment.appointmentId)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       )}
                       
                       {/* Staff-only actions */}
@@ -1023,6 +1025,16 @@ const Appointments = () => {
             
             {selectedAppointment.status === 'scheduled' && (
               <div className="modal-actions" style={{ marginTop: '24px' }}>
+                <Button 
+                  variant="secondary"
+                  icon={CalendarClock}
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleStartReschedule(selectedAppointment);
+                  }}
+                >
+                  Reschedule
+                </Button>
                 <Button 
                   variant="danger"
                   icon={Trash2}
