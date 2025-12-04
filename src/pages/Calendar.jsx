@@ -82,11 +82,13 @@ const Calendar = () => {
   const appointmentMap = useMemo(() => {
     const map = {};
     userAppointments.forEach(apt => {
-      const key = `${apt.scheduledDate}-${apt.scheduledTime}`;
+      const dateStr = formatDate(new Date(apt.scheduledDate || apt.date));
+      const timeStr = apt.scheduledTime || apt.time;
+      const key = `${dateStr}-${timeStr}`;
       map[key] = apt;
     });
     return map;
-  }, [userAppointments]);
+  }, [userAppointments, formatDate]);
 
   // ✅ useCallback: Get appointment for specific slot
   const getAppointmentForSlot = useCallback((date, time) => {
@@ -216,9 +218,9 @@ const Calendar = () => {
                     >
                       {appointment && (
                         <div className={`appointment-block ${appointment.status.toLowerCase()}`}>
-                          <div className="appointment-time">{appointment.scheduledTime}</div>
+                          <div className="appointment-time">{appointment.scheduledTime || appointment.time}</div>
                           <div className="appointment-student">
-                            {isStaff ? appointment.studentId : appointment.reason}
+                            {isStaff ? (appointment.user?.schoolId || appointment.studentId || 'Unknown') : appointment.reason}
                           </div>
                           <div className="appointment-concern">
                             {appointment.reason || 'Medical Appointment'}

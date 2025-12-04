@@ -314,11 +314,11 @@ export const AuthProvider = ({ children }) => {
         const expiryDuration = rememberMe ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
         const expiry = new Date(Date.now() + expiryDuration);
         
-        // Create the staff user object with admin role
+        // Create the staff user object with staff role
         const userToSave = {
           ...staffUser,
           isAuthenticated: true,
-          role: 'admin',
+          role: 'staff',
           adminName: data.adminName,
           permissions: data.permissions
         };

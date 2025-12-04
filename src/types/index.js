@@ -216,7 +216,8 @@ export const APPOINTMENT_STATUS = {
   SCHEDULED: "scheduled",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
-  RESCHEDULED: "rescheduled"
+  RESCHEDULED: "rescheduled",
+  SUCCESS: "success"
 };
 
 export const NOTIFICATION_TYPES = {

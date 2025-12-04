@@ -8,6 +8,7 @@ import { useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import useAppointments from '../hooks/useAppointments';
 import { useAuditLog } from '../context/AuditLogContext';
+import { isStaff } from '../services/auth-helper';
 import { 
   Search, 
   Calendar, 
@@ -27,18 +28,28 @@ import './Appointments.css';
 
 const Appointments = () => {
   const location = useLocation();
-  const { user, isStaff } = useAuth();
+  const { user } = useAuth();
+  const userIsStaff = isStaff(user);
   const { logAction } = useAuditLog();
   const { 
     appointments: userAppointments = [], 
     loading, 
-    error, 
     bookAppointment, 
-    updateAppointment, 
     cancelAppointment,
+    completeAppointment,
+    successAppointment,
+    rescheduleAppointment,
+    createTimeSlot,
+    updateTimeSlot,
+    deleteTimeSlot,
     availableSlots = [],
     refreshAppointments
   } = useAppointments();
+
+  // Debug: Log appointments data
+  console.log('Appointments page - userAppointments:', userAppointments);
+  console.log('Appointments page - user role:', user?.role);
+  console.log('Appointments page - user ID:', user?.userId);
   
   // Set up event listener for appointment updates
   useEffect(() => {
@@ -77,12 +88,12 @@ const Appointments = () => {
     location: 'Main Clinic'
   });
 
-  // Use availableSlots from the useAppointments hook
-  // Use availableSlots directly from the useAppointments hook
-
   const [slotFormData, setSlotFormData] = useState({
     date: '',
     time: '',
+    endTime: '',
+    maxBookings: 1,
+    currentBookings: 0,
     location: 'Main Clinic'
   });
 
@@ -123,7 +134,6 @@ const Appointments = () => {
   const slotsByDate = useMemo(() => {
     const grouped = {};
     
-    // Sort available slots by date and time
     const sortedSlots = [...availableSlots].sort((a, b) => {
       if (a.date === b.date) {
         return a.time.localeCompare(b.time);
@@ -131,7 +141,6 @@ const Appointments = () => {
       return new Date(a.date) - new Date(b.date);
     });
 
-    // Group slots by date
     sortedSlots.forEach(slot => {
       if (!grouped[slot.date]) {
         grouped[slot.date] = [];
@@ -201,7 +210,6 @@ const Appointments = () => {
   
   const handleConfirmBooking = useCallback(async () => {
     try {
-      // Double-check slot availability right before booking
       const slot = availableSlots.find(s => s.slotId === bookingData.slotId);
       if (!slot) {
         setMessage({ 
@@ -212,43 +220,52 @@ const Appointments = () => {
         return;
       }
 
-      const result = bookingData.isReschedule 
-        ? await bookAppointment({
-            ...bookingData,
-            isReschedule: true,
-            originalAppointmentId: bookingData.appointmentId
-          })
-        : await bookAppointment(bookingData);
-      
-      if (result.success) {
-        // The slot availability is managed by the useAppointments hook
-        if (isStaff) {
-          const action = bookingData.isReschedule ? 'Rescheduled' : 'Booked';
-          logAction(`${action} Appointment`, `${action} appointment for ${bookingData.date} at ${bookingData.time}`);
+      let result;
+      if (bookingData.isReschedule) {
+        // Use the new reschedule API endpoint
+        result = await rescheduleAppointment(bookingData.appointmentId, bookingData.slotId);
+        if (result.success) {
+          setMessage({ type: 'success', text: result.message });
+          setTimeout(() => {
+            setShowBookingModal(false);
+            setBookingStep(1);
+            setSelectedSlot(null);
+            setMessage({ type: '', text: '' });
+          }, 1000);
+        } else {
+          setMessage({ type: 'error', text: result.error });
         }
-        
-        // Create a new appointment object with all required fields
-        const newAppointment = {
-          ...bookingData,
-          appointmentId: `appt-${Date.now()}`,
-          status: 'scheduled',
-          scheduledDate: bookingData.date,
-          scheduledTime: bookingData.time,
-          location: bookingData.location || 'Main Clinic'
-        };
-        
-        setSelectedAppointment(newAppointment);
-        setMessage({ type: 'success', text: result.message });
-        
-        setTimeout(() => {
-          setShowBookingModal(false);
-          setShowDetailsModal(true); // Show details of the newly created appointment
-          setBookingStep(1);
-          setSelectedSlot(null);
-          setMessage({ type: '', text: '' });
-        }, 1000);
       } else {
-        setMessage({ type: 'error', text: result.error });
+        // Normal booking flow
+        result = await bookAppointment(bookingData);
+        if (result.success) {
+          if (userIsStaff) {
+            const action = 'Booked';
+            logAction(`${action} Appointment`, `${action} appointment for ${bookingData.date} at ${bookingData.time}`);
+          }
+          
+          const newAppointment = {
+            ...bookingData,
+            appointmentId: `appt-${Date.now()}`,
+            status: 'scheduled',
+            scheduledDate: bookingData.date,
+            scheduledTime: bookingData.time,
+            location: bookingData.location || 'Main Clinic'
+          };
+          
+          setSelectedAppointment(newAppointment);
+          setMessage({ type: 'success', text: result.message });
+          
+          setTimeout(() => {
+            setShowBookingModal(false);
+            setShowDetailsModal(true); // Show details of the newly created appointment
+            setBookingStep(1);
+            setSelectedSlot(null);
+            setMessage({ type: '', text: '' });
+          }, 1000);
+        } else {
+          setMessage({ type: 'error', text: result.error });
+        }
       }
     } catch (error) {
       console.error('Error confirming booking:', error);
@@ -257,7 +274,7 @@ const Appointments = () => {
         text: 'An error occurred while processing your request. Please try again.' 
       });
     }
-  }, [bookingData, bookAppointment, isStaff, logAction]);
+  }, [bookingData, bookAppointment, rescheduleAppointment, userIsStaff, logAction, availableSlots]);
   
   const handleViewDetails = useCallback((appointment) => {
     setSelectedAppointment(appointment);
@@ -281,16 +298,33 @@ const Appointments = () => {
     });
     setMessage({ type: '', text: '' });
   }, []);
-  
+
+  const handleSuccessAppointment = useCallback(async (appointmentId) => {
+    if (!window.confirm('Are you sure you want to mark this appointment as successful?')) {
+      return;
+    }
+    
+    const result = await successAppointment(appointmentId);
+    
+    if (result.success) {
+      logAction('Success Appointment', `Marked appointment ID: ${appointmentId} as successful`);
+      setMessage({ type: 'success', text: result.message });
+      setShowDetailsModal(false);
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } else {
+      setMessage({ type: 'error', text: result.error });
+    }
+  }, [successAppointment, logAction]);
+
   const handleCancelAppointment = useCallback(async (appointmentId) => {
     if (!window.confirm('Are you sure you want to cancel this appointment?')) {
       return;
     }
     
-    const result = await cancelAppointment(appointmentId, isStaff ? 'Cancelled by staff' : 'Cancelled by user');
+    const result = await cancelAppointment(appointmentId, userIsStaff ? 'Cancelled by staff' : 'Cancelled by user');
     
     if (result.success) {
-      if (isStaff) {
+      if (userIsStaff) {
         logAction('Cancelled Appointment', `Cancelled appointment ID: ${appointmentId}`);
       }
       
@@ -300,7 +334,7 @@ const Appointments = () => {
     } else {
       setMessage({ type: 'error', text: result.error });
     }
-  }, [cancelAppointment, isStaff, logAction]);
+  }, [cancelAppointment, userIsStaff, logAction]);
 
   const handleOpenSlotManagement = useCallback(() => {
     setShowSlotModal(true);
@@ -308,6 +342,9 @@ const Appointments = () => {
     setSlotFormData({
       date: '',
       time: '',
+      endTime: '',
+      maxBookings: 1,
+      currentBookings: 0,
       location: 'Main Clinic'
     });
   }, []);
@@ -317,27 +354,55 @@ const Appointments = () => {
     setSlotFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  const handleUpdateSlot = useCallback(() => {
+  const handleUpdateSlot = useCallback(async () => {
     if (!slotFormData.date || !slotFormData.time) {
       setMessage({ type: 'error', text: 'Please fill in all slot fields' });
       return;
     }
     
-    // Note: In a real implementation, you would call an API to add/update the slot
-    // For now, we'll just show a message
-    setMessage({ 
-      type: 'info', 
-      text: 'Slot management is handled by the system. Please use the admin interface to manage time slots.' 
-    });
-    
-    setSlotFormData({ date: '', time: '', location: 'Main Clinic' });
-    setSelectedSlotEdit(null);
-    setSlotMode('create');
-    
-    setTimeout(() => {
-      setMessage({ type: '', text: '' });
-    }, 3000);
-  }, [slotFormData, slotMode, selectedSlotEdit, user?.userId]);
+    try {
+      let result;
+      
+      if (slotMode === 'create') {
+        result = await createTimeSlot({
+          date: slotFormData.date,
+          time: slotFormData.time,
+          endTime: slotFormData.endTime,
+          maxBookings: slotFormData.maxBookings,
+          currentBookings: slotFormData.currentBookings,
+          location: slotFormData.location
+        });
+      } else {
+        result = await updateTimeSlot(selectedSlotEdit.slotId, {
+          date: slotFormData.date,
+          time: slotFormData.time,
+          endTime: slotFormData.endTime,
+          maxBookings: slotFormData.maxBookings,
+          currentBookings: slotFormData.currentBookings,
+          location: slotFormData.location
+        });
+      }
+      
+      if (result.success) {
+        const action = slotMode === 'create' ? 'created' : 'updated';
+        logAction(`${action.charAt(0).toUpperCase() + action.slice(1)} Time Slot`, `${action.charAt(0).toUpperCase() + action.slice(1)} slot for ${slotFormData.date} at ${slotFormData.time}`);
+        
+        setMessage({ type: 'success', text: result.message });
+        setSlotFormData({ date: '', time: '', endTime: '', maxBookings: 1, currentBookings: 0, location: 'Main Clinic' });
+        setSelectedSlotEdit(null);
+        setSlotMode('create');
+        
+        setTimeout(() => {
+          setMessage({ type: '', text: '' });
+        }, 3000);
+      } else {
+        setMessage({ type: 'error', text: result.error });
+      }
+    } catch (error) {
+      console.error('Error updating slot:', error);
+      setMessage({ type: 'error', text: 'An error occurred while managing the time slot' });
+    }
+  }, [slotFormData, slotMode, selectedSlotEdit, createTimeSlot, updateTimeSlot, logAction]);
 
   const handleEditSlot = useCallback((slot) => {
     setSlotMode('edit');
@@ -345,24 +410,34 @@ const Appointments = () => {
     setSlotFormData({
       date: slot.date,
       time: slot.time,
+      endTime: slot.endTime || '',
+      maxBookings: slot.maxBookings || 1,
+      currentBookings: slot.currentBookings || 0,
       location: slot.location
     });
   }, []);
 
-  const handleDeleteSlot = useCallback((slotId) => {
+  const handleDeleteSlot = useCallback(async (slot) => {
     if (window.confirm('Are you sure you want to delete this time slot?')) {
-      // Note: In a real implementation, you would call an API to delete the slot
-      // For now, we'll just show a message
-      setMessage({ 
-        type: 'info', 
-        text: 'Slot deletion is handled by the system. Please use the admin interface to manage time slots.' 
-      });
-      
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 3000);
+      try {
+        const result = await deleteTimeSlot(slot.slotId);
+        
+        if (result.success) {
+          logAction('Deleted Time Slot', `Deleted slot for ${slot.date} at ${slot.time}`);
+          setMessage({ type: 'success', text: result.message });
+          
+          setTimeout(() => {
+            setMessage({ type: '', text: '' });
+          }, 3000);
+        } else {
+          setMessage({ type: 'error', text: result.error });
+        }
+      } catch (error) {
+        console.error('Error deleting slot:', error);
+        setMessage({ type: 'error', text: 'An error occurred while deleting the time slot' });
+      }
     }
-  }, []);
+  }, [deleteTimeSlot, logAction]);
 
   if (loading && userAppointments.length === 0) {
     return null;
@@ -374,14 +449,14 @@ const Appointments = () => {
         <div>
           <h1 className="page-title">Appointments</h1>
           <p className="page-subtitle">
-            {isStaff 
+            {userIsStaff 
               ? 'Manage appointments and time slots' 
               : 'View and manage your upcoming appointments'
             }
           </p>
         </div>
         <div className="header-actions">
-          {isStaff && (
+          {userIsStaff && (
             <Button 
               variant="secondary"
               icon={Clock}
@@ -390,7 +465,7 @@ const Appointments = () => {
               Manage Slots
             </Button>
           )}
-          {!isStaff && (
+          {!userIsStaff && (
             <Button 
               variant="primary"
               icon={Plus}
@@ -447,6 +522,7 @@ const Appointments = () => {
             <option value="">All Status</option>
             <option value="scheduled">Scheduled</option>
             <option value="completed">Completed</option>
+            <option value="success">Success</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
@@ -460,7 +536,6 @@ const Appointments = () => {
             >
               <option value="">All Locations</option>
               <option value="Main Clinic">Main Clinic</option>
-              <option value="Dental Clinic">Dental Clinic</option>
             </select>
           </div>
           
@@ -483,6 +558,7 @@ const Appointments = () => {
           <thead>
             <tr>
               <th>Date & Time</th>
+              {userIsStaff && <th>User ID</th>}
               <th>Reason</th>
               <th>Location</th>
               <th>Status</th>
@@ -504,6 +580,11 @@ const Appointments = () => {
                       })}
                     </small>
                   </td>
+                  {userIsStaff && (
+                    <td>
+                      <span className="user-id">{appointment.user?.schoolId || appointment.studentId || 'N/A'}</span>
+                    </td>
+                  )}
                   <td>
                     <strong>{appointment.reason}</strong>
                     {appointment.symptoms && (
@@ -531,7 +612,9 @@ const Appointments = () => {
                       >
                         <Eye size={14} />
                       </button>
-                      {appointment.status === 'scheduled' && (
+                      
+                      {/* Student-only actions */}
+                      {!userIsStaff && appointment.status === 'scheduled' && (
                         <>
                           <button 
                             className="action-btn action-btn-edit"
@@ -549,25 +632,49 @@ const Appointments = () => {
                           </button>
                         </>
                       )}
+                      
+                      {/* Staff-only actions */}
+                      {console.log('Rendering actions, userIsStaff:', userIsStaff, 'appointment:', appointment.appointmentId)}
+                      {userIsStaff && (
+                        <>
+                          {console.log('Staff detected, rendering Success button')}
+                          <button 
+                            className="action-btn action-btn-success" 
+                            title="Mark as Success"
+                            onClick={() => handleSuccessAppointment(appointment.appointmentId)}
+                          >
+                            <CheckCircle size={14} />
+                          </button>
+                          <button 
+                            className="action-btn action-btn-delete" 
+                            title="Cancel"
+                            onClick={() => handleCancelAppointment(appointment.appointmentId)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
+                <td colSpan={userIsStaff ? "6" : "5"} style={{ textAlign: 'center', padding: '40px' }}>
                   <div className="empty-state">
                     <Calendar size={48} />
                     <h3>No appointments found</h3>
                     <p>
                       {filters.search || filters.date || filters.status || filters.location
                         ? 'Try adjusting your filters'
-                        : 'Book your first appointment to get started'
+                        : userIsStaff 
+                          ? 'No appointments scheduled. Manage time slots to create availability.'
+                          : 'Book your first appointment to get started'
                       }
                     </p>
-                    {!isStaff && (
-                      <Button variant="primary" onClick={handleStartBooking}>
-                        Book Appointment
+                    {userIsStaff && (
+                      <Button variant="primary" onClick={handleOpenSlotManagement}>
+                        Manage Slots
                       </Button>
                     )}
                   </div>
@@ -658,6 +765,14 @@ const Appointments = () => {
               required
             />
             
+            <Input
+              label="Location"
+              name="location"
+              value={bookingData.location || 'Main Clinic'}
+              onChange={handleBookingInputChange}
+              placeholder="e.g., Main Clinic, Room 101, etc."
+            />
+            
             <Textarea
               label="Symptoms (Optional)"
               name="symptoms"
@@ -682,7 +797,7 @@ const Appointments = () => {
           <div className="booking-step">
             <h3>Confirm Your Appointment</h3>
             <div className="confirmation-details">
-            <div className="confirmation-row">
+              <div className="confirmation-row">
                 <span className="label">Date:</span>
                 <span className="value">
                   {new Date(bookingData.date).toLocaleDateString('en-US', {
@@ -731,7 +846,7 @@ const Appointments = () => {
       </Modal>
 
       {/* Slot Management Modal (Staff Only) */}
-      {isStaff && (
+      {userIsStaff && (
         <Modal
           isOpen={showSlotModal}
           onClose={() => setShowSlotModal(false)}
@@ -764,6 +879,33 @@ const Appointments = () => {
                   onChange={handleSlotInputChange}
                   required
                 />
+                <Input
+                  label="End Time"
+                  type="time"
+                  name="endTime"
+                  value={slotFormData.endTime}
+                  onChange={handleSlotInputChange}
+                />
+                <div className="input-group">
+                  <label className="input-label">Max Bookings</label>
+                  <input
+                    type="number"
+                    name="maxBookings"
+                    value={slotFormData.maxBookings}
+                    onChange={handleSlotInputChange}
+                    className="form-input"
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Current Bookings</label>
+                  <input
+                    type="number"
+                    name="currentBookings"
+                    value={slotFormData.currentBookings}
+                    onChange={handleSlotInputChange}
+                    className="form-input"
+                  />
+                </div>
                 <div className="input-group">
                   <label className="input-label">Location</label>
                   <select
@@ -773,7 +915,6 @@ const Appointments = () => {
                     className="form-input"
                   >
                     <option value="Main Clinic">Main Clinic</option>
-                    <option value="Dental Clinic">Dental Clinic</option>
                   </select>
                 </div>
               </div>
@@ -787,6 +928,9 @@ const Appointments = () => {
                       setSlotFormData({
                         date: '',
                         time: '',
+                        endTime: '',
+                        maxBookings: 1,
+                        currentBookings: 0,
                         location: 'Main Clinic'
                       });
                     }}
