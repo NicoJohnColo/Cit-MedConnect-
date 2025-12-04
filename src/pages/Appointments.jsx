@@ -613,8 +613,8 @@ const Appointments = () => {
                         <Eye size={14} />
                       </button>
                       
-                      {/* Reschedule button for both student and staff roles */}
-                      {appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'success' && (
+                      {/* Reschedule button - only show for students here */}
+                      {!userIsStaff && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'success' && (
                         <button 
                           className="action-btn action-btn-edit"
                           title="Reschedule"
@@ -625,7 +625,7 @@ const Appointments = () => {
                       )}
                       
                       {/* Student-only actions */}
-                      {!userIsStaff && appointment.status === 'scheduled' && (
+                      {!userIsStaff && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'success' && (
                         <button 
                           className="action-btn action-btn-delete" 
                           title="Cancel"
@@ -636,10 +636,17 @@ const Appointments = () => {
                       )}
                       
                       {/* Staff-only actions */}
-                      {console.log('Rendering actions, userIsStaff:', userIsStaff, 'appointment:', appointment.appointmentId)}
                       {userIsStaff && (
                         <>
-                          {console.log('Staff detected, rendering Success button')}
+                          {appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'success' && (
+                            <button 
+                              className="action-btn action-btn-edit"
+                              title="Reschedule"
+                              onClick={() => handleStartReschedule(appointment)}
+                            >
+                              <CalendarClock size={14} />
+                            </button>
+                          )}
                           <button 
                             className="action-btn action-btn-success" 
                             title="Mark as Success"

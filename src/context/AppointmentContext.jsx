@@ -377,7 +377,7 @@ export const AppointmentProvider = ({ children }) => {
   }, [appointmentService, createAuditLog, user]);
   
   /**
-   * RESCHEDULE APPOINTMENT (Student only)
+   * RESCHEDULE APPOINTMENT (Student and Staff)
    * Flow: Check Appointments → Select New Slot → Reschedule → Update Appointment
    */
   const rescheduleAppointment = useCallback(async (appointmentId, newTimeSlotId) => {
@@ -385,12 +385,10 @@ export const AppointmentProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Only students can reschedule appointments
-      if (user?.role !== 'student') {
-        throw new Error('Only students can reschedule appointments');
-      }
+      // Both students and staff can reschedule appointments
+      // Students can only reschedule their own appointments, staff can reschedule any
       
-      // Find the appointment to verify ownership
+      // Find the appointment to verify ownership (for students) or existence (for staff)
       const appointment = appointments.find(a => a.appointmentId === appointmentId);
       if (!appointment) {
         throw new Error('Appointment not found');
