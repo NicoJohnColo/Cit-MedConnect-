@@ -7,17 +7,18 @@ import React, {
   createContext, 
   useState, 
   useEffect, 
-  useCallback, 
+  useCallback,
   useMemo,
   useRef,
 } from 'react';
 import { useAuth } from './AuthContext';
+import AppointmentService from '../services/appointment-service';
+import { transformAppointment, transformTimeSlot } from '../services/data-transformer';
 import { 
   APPOINTMENT_STATUS,
-  generateId,
 } from '../types';
 
-// ✅ Create Context
+// Create Context
 const AppointmentContext = createContext(null);
 
 /**
@@ -28,58 +29,145 @@ export const AppointmentProvider = ({ children }) => {
   const { user, createAuditLog } = useAuth();
   const isMounted = useRef(true);
 
-  // ============================================
+  // Initialize appointment service
+  const [appointmentService] = useState(() => new AppointmentService(user));
+
+  // Update service when user changes
+  useEffect(() => {
+    if (appointmentService) {
+      appointmentService.updateUser(user);
+    }
+  }, [user, appointmentService]);
+
   // STATE MANAGEMENT - useState
   // ============================================
   
   const [appointments, setAppointments] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ============================================
   // INITIALIZE DATA - useEffect
-  // Initialize with generated time slots
+  // Load data from API
   useEffect(() => {
-    const initData = async () => {
+    const loadData = async () => {
+      if (!user) return;
+      
       setLoading(true);
       try {
-        console.log('Initializing appointment data...');
+        console.log('Loading appointment data...');
+        console.log('User role:', user?.role);
+        console.log('User ID:', user?.userId);
+        console.log('User schoolId:', user?.schoolId);
+        console.log('Full user object:', user);
         
-        // Start with empty appointments
-        console.log('Starting with empty appointments list');
-        setAppointments([]);
+        // Use schoolId as fallback if userId is undefined
+        const actualUserId = user?.userId || user?.schoolId;
+        console.log('Actual user ID to use:', actualUserId);
+        
+        // Load appointments based on user role
+        let appointmentsData = [];
+        if (user.role === 'staff') {
+          console.log('Loading all appointments for staff...');
+          appointmentsData = await appointmentService.getAllAppointments();
+          console.log('Staff appointments data:', appointmentsData);
+        } else if (user.role === 'student') {
+          console.log('Loading appointments for student...');
+          console.log('Student user ID:', actualUserId);
+          try {
+            appointmentsData = await appointmentService.getStudentAppointments();
+            console.log('Student appointments data:', appointmentsData);
+            console.log('Student appointments length:', appointmentsData?.length || 0);
+            if (!appointmentsData || appointmentsData.length === 0) {
+              console.log('No appointments from student endpoint, trying fallback...');
+              // Fallback to user appointments endpoint
+              appointmentsData = await appointmentService.getUserAppointments(actualUserId);
+              console.log('User appointments data (fallback):', appointmentsData);
+              console.log('User appointments length (fallback):', appointmentsData?.length || 0);
+            }
+          } catch (studentError) {
+            console.log('Student endpoint failed, trying user appointments:', studentError);
+            // Fallback to user appointments endpoint
+            appointmentsData = await appointmentService.getUserAppointments(actualUserId);
+            console.log('User appointments data (fallback):', appointmentsData);
+            console.log('User appointments length (fallback):', appointmentsData?.length || 0);
+          }
+        } else {
+          console.log('Loading appointments for user:', actualUserId);
+          appointmentsData = await appointmentService.getUserAppointments(actualUserId);
+          console.log('User appointments data:', appointmentsData);
+        }
+        
+        console.log('Raw appointments loaded:', appointmentsData.length, 'appointments');
+        console.log('Appointments loaded successfully:', appointmentsData);
+        
+        // Debug: Check if appointments have required fields
+        if (appointmentsData.length > 0) {
+          console.log('First appointment sample:', appointmentsData[0]);
+          console.log('First appointment fields:', Object.keys(appointmentsData[0]));
+        }
+        
+        // Transform appointments for frontend compatibility
+        const transformedAppointments = appointmentsData.map(apt => {
+          console.log('Transforming appointment:', apt);
+          const transformed = transformAppointment(apt);
+          console.log('Transformed to:', transformed);
+          return transformed;
+        });
+        console.log('Final transformed appointments:', transformedAppointments);
+        console.log('Final transformed appointments length:', transformedAppointments.length);
+        setAppointments(transformedAppointments);
+        
+        // Load slots based on user role
+        if (user.role === 'student') {
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } else if (user.role === 'staff') {
+          // Staff need to see all slots for management
+          try {
+            const staffSlotsData = await appointmentService.getStaffSlots();
+            const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+            setAvailableSlots(transformedSlots);
+          } catch (staffSlotsError) {
+            console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+            // Fallback to available slots if staff slots endpoint fails
+            const slotsData = await appointmentService.getAvailableSlots();
+            const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+            setAvailableSlots(transformedSlots);
+          }
+        }
+        
+        console.log('Data loaded successfully');
       } catch (err) {
-        console.error('Failed to initialize appointment data:', err);
+        console.error('Failed to load appointment data:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
     
-    initData();
+    loadData();
     
     return () => {
       isMounted.current = false;
     };
-  }, []);
+  }, [user, appointmentService]);
 
-  // ============================================
   // COMPUTED VALUES - useMemo
   // ============================================
   
-  // ✅ Get user's appointments
+  // Get user's appointments
   const userAppointments = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'student') {
-      return appointments.filter(apt => apt.studentId === user.userId);
-    }
-    if (user.role === 'staff') {
-      return appointments.filter(apt => apt.staffId === user.userId);
-    }
-    return [];
+    // Appointments are already filtered by role from the API
+    console.log('userAppointments memo - user:', user);
+    console.log('userAppointments memo - appointments count:', appointments.length);
+    console.log('userAppointments memo - returning all appointments:', appointments);
+    return appointments;
   }, [appointments, user]);
   
-  // ✅ Get upcoming appointments
+  // Get upcoming appointments
   const upcomingAppointments = useMemo(() => {
     const now = new Date();
     return userAppointments
@@ -108,7 +196,7 @@ export const AppointmentProvider = ({ children }) => {
       }));
   }, [userAppointments]);
 
-  // ✅ Get appointment statistics
+  // Get appointment statistics
   const appointmentStats = useMemo(() => {
     const total = userAppointments.length;
     const scheduled = userAppointments.filter(a => a.status === APPOINTMENT_STATUS.SCHEDULED).length;
@@ -118,7 +206,6 @@ export const AppointmentProvider = ({ children }) => {
     return { total, scheduled, completed, cancelled };
   }, [userAppointments]);
 
-  // ============================================
   // APPOINTMENT BOOKING - useCallback
   // ============================================
   
@@ -131,34 +218,51 @@ export const AppointmentProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Step 1: Create appointment record
-      const newAppointment = {
-        appointmentId: generateId('APT'),
-        studentId: user.userId,
-        staffId: appointmentData.staffId || 'STAFF-AUTO',
-        status: APPOINTMENT_STATUS.SCHEDULED,
-        reason: appointmentData.reason,
-        symptoms: appointmentData.symptoms || '',
-        notes: '',
-        location: appointmentData.location || 'Main Clinic',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        scheduledDate: appointmentData.date,
-        scheduledTime: appointmentData.time
-      };
+      // Call API to book appointment
+      const response = await appointmentService.bookAppointment(
+        appointmentData.slotId,
+        {
+          studentId: user.userId,
+          reason: appointmentData.reason,
+          notes: appointmentData.symptoms || appointmentData.notes
+        }
+      );
       
-      // Step 2: Update appointments state
+      // Transform response for frontend
+      const newAppointment = transformAppointment(response);
+      
+      // Update appointments state
       setAppointments(prev => [...prev, newAppointment]);
       
-      // Step 3: Create audit log
+      // Update available slots (refresh)
+      if (user.role === 'student') {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } else if (user.role === 'staff') {
+        // Staff need to see all slots for management
+        try {
+          const staffSlotsData = await appointmentService.getStaffSlots();
+          const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } catch (staffSlotsError) {
+          console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+          // Fallback to available slots if staff slots endpoint fails
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        }
+      }
+      
+      // Create audit log
       await createAuditLog('CREATE', 'appointment', newAppointment.appointmentId, appointmentData);
       
-      // Step 4: Send notification (handled by NotificationContext)
+      // Send notification (handled by NotificationContext)
       window.dispatchEvent(new CustomEvent('appointmentBooked', {
         detail: newAppointment
       }));
       
-      // Step 5: Force a re-render of the appointments list
+      // Force a re-render of the appointments list
       window.dispatchEvent(new Event('appointmentsUpdated'));
       
       setLoading(false);
@@ -174,9 +278,8 @@ export const AppointmentProvider = ({ children }) => {
       setLoading(false);
       return { success: false, error: err.message };
     }
-  }, [user, createAuditLog]);
+  }, [user, appointmentService, createAuditLog]);
 
-  // ============================================
   // APPOINTMENT ACTIONS - useCallback
   // ============================================
   
@@ -215,12 +318,10 @@ export const AppointmentProvider = ({ children }) => {
     setError(null);
     
     try {
-      const appointment = appointments.find(a => a.appointmentId === appointmentId);
-      if (!appointment) {
-        throw new Error('Appointment not found');
-      }
+      // Call API to cancel appointment
+      await appointmentService.cancelAppointment(appointmentId);
       
-      // Update appointment status
+      // Update local state
       setAppointments(prev => prev.map(apt =>
         apt.appointmentId === appointmentId
           ? { 
@@ -232,6 +333,26 @@ export const AppointmentProvider = ({ children }) => {
           : apt
       ));
       
+      // Update available slots
+      if (user.role === 'student') {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } else if (user.role === 'staff') {
+        // Staff need to see all slots for management
+        try {
+          const staffSlotsData = await appointmentService.getStaffSlots();
+          const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } catch (staffSlotsError) {
+          console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+          // Fallback to available slots if staff slots endpoint fails
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        }
+      }
+      
       // Create audit log
       await createAuditLog('UPDATE', 'appointment', appointmentId, { 
         status: APPOINTMENT_STATUS.CANCELLED,
@@ -240,7 +361,7 @@ export const AppointmentProvider = ({ children }) => {
       
       // Trigger notification
       window.dispatchEvent(new CustomEvent('appointmentCancelled', {
-        detail: appointment
+        detail: { appointmentId }
       }));
       
       setLoading(false);
@@ -253,43 +374,64 @@ export const AppointmentProvider = ({ children }) => {
       setLoading(false);
       return { success: false, error: err.message };
     }
-  }, [appointments, createAuditLog]);
+  }, [appointmentService, createAuditLog, user]);
   
   /**
-   * RESCHEDULE APPOINTMENT
-   * Flow: Check Appointments → Reschedule → Update Appointment
+   * RESCHEDULE APPOINTMENT (Student only)
+   * Flow: Check Appointments → Select New Slot → Reschedule → Update Appointment
    */
-  const rescheduleAppointment = useCallback(async (appointmentId, newDate, newTime) => {
+  const rescheduleAppointment = useCallback(async (appointmentId, newTimeSlotId) => {
     setLoading(true);
     setError(null);
     
     try {
+      // Only students can reschedule appointments
+      if (user?.role !== 'student') {
+        throw new Error('Only students can reschedule appointments');
+      }
+      
+      // Find the appointment to verify ownership
       const appointment = appointments.find(a => a.appointmentId === appointmentId);
       if (!appointment) {
         throw new Error('Appointment not found');
       }
       
-      // Update appointment
+      // Call API to reschedule
+      await appointmentService.rescheduleAppointment(appointmentId, newTimeSlotId);
+      
+      // Find the new time slot details
+      const newSlot = availableSlots.find(slot => slot.slotId === newTimeSlotId);
+      
+      // Update local state
       setAppointments(prev => prev.map(apt =>
         apt.appointmentId === appointmentId
           ? {
               ...apt,
-              scheduledDate: newDate,
-              scheduledTime: newTime,
+              scheduledDate: newSlot?.date || apt.scheduledDate,
+              scheduledTime: newSlot?.time || apt.scheduledTime,
               status: APPOINTMENT_STATUS.SCHEDULED,
               updatedAt: new Date().toISOString()
             }
           : apt
       ));
       
+      // Update available slots
+      const slotsData = await appointmentService.getAvailableSlots();
+      setAvailableSlots(slotsData);
+      
       // Create audit log
       await createAuditLog('UPDATE', 'appointment', appointmentId, {
         action: 'reschedule',
         oldDate: appointment.scheduledDate,
         oldTime: appointment.scheduledTime,
-        newDate,
-        newTime
+        newDate: newSlot?.date,
+        newTime: newSlot?.time
       });
+      
+      // Trigger notification
+      window.dispatchEvent(new CustomEvent('appointmentRescheduled', {
+        detail: { appointmentId, newSlot }
+      }));
       
       setLoading(false);
       return { 
@@ -301,12 +443,95 @@ export const AppointmentProvider = ({ children }) => {
       setLoading(false);
       return { success: false, error: err.message };
     }
-  }, [appointments, createAuditLog]);
+  }, [appointments, availableSlots, appointmentService, createAuditLog, user]);
 
-  // ============================================
   // STAFF OPERATIONS - useCallback
   // ============================================
   
+  /**
+   * COMPLETE APPOINTMENT (Staff Only)
+   * Flow: Staff Dashboard → View Appointments → Complete Appointment
+   */
+  const completeAppointment = useCallback(async (appointmentId) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to complete appointment
+      await appointmentService.completeAppointment(appointmentId);
+      
+      // Update local state
+      setAppointments(prev => prev.map(apt =>
+        apt.appointmentId === appointmentId
+          ? {
+              ...apt,
+              status: APPOINTMENT_STATUS.COMPLETED,
+              updatedAt: new Date().toISOString()
+            }
+          : apt
+      ));
+      
+      // Create audit log
+      await createAuditLog('UPDATE', 'appointment', appointmentId, { 
+        status: APPOINTMENT_STATUS.COMPLETED 
+      });
+      
+      // Trigger notification to student
+      window.dispatchEvent(new CustomEvent('appointmentCompleted', {
+        detail: { appointmentId }
+      }));
+      
+      setLoading(false);
+      return { success: true, message: 'Appointment marked as completed' };
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  }, [appointmentService, createAuditLog]);
+
+  /**
+   * SUCCESS APPOINTMENT (Staff Only)
+   * Flow: Staff Dashboard → View Appointments → Mark as Success
+   */
+  const successAppointment = useCallback(async (appointmentId) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to mark appointment as success
+      await appointmentService.successAppointment(appointmentId);
+      
+      // Update local state
+      setAppointments(prev => prev.map(apt =>
+        apt.appointmentId === appointmentId
+          ? {
+              ...apt,
+              status: APPOINTMENT_STATUS.SUCCESS,
+              updatedAt: new Date().toISOString()
+            }
+          : apt
+      ));
+      
+      // Create audit log
+      await createAuditLog('UPDATE', 'appointment', appointmentId, { 
+        status: APPOINTMENT_STATUS.SUCCESS 
+      });
+      
+      // Trigger notification to student
+      window.dispatchEvent(new CustomEvent('appointmentSuccess', {
+        detail: { appointmentId }
+      }));
+      
+      setLoading(false);
+      return { success: true, message: 'Appointment marked as successful' };
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  }, [appointmentService, createAuditLog]);
+
   /**
    * UPDATE APPOINTMENT STATUS (Staff Only)
    * Flow: Staff Dashboard → View Appointments → Manage Appointment → Update Status
@@ -343,37 +568,206 @@ export const AppointmentProvider = ({ children }) => {
     }
   }, [user, createAuditLog]);
 
-  // ============================================
-  // RESET ALL DATA - Clear appointments
+  // TIME SLOT MANAGEMENT (Staff Only)
   // ============================================
   
-  const resetAllData = useCallback(async () => {
+  /**
+   * CREATE TIME SLOT (Staff Only)
+   */
+  const createTimeSlot = useCallback(async (slotData) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
+      console.log('createTimeSlot called with user:', user);
+      console.log('User role:', user?.role);
       
-      // Clear appointments
-      setAppointments([]);
+      // Call API to create time slot
+      console.log('Calling appointmentService.createTimeSlot with:', slotData);
+      const response = await appointmentService.createTimeSlot(slotData);
+      console.log('createTimeSlot API response:', response);
+      
+      // Update available slots
+      if (user.role === 'student') {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } else if (user.role === 'staff') {
+        // Staff need to see all slots for management
+        try {
+          const staffSlotsData = await appointmentService.getStaffSlots();
+          const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } catch (staffSlotsError) {
+          console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+          // Fallback to available slots if staff slots endpoint fails
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        }
+      }
       
       // Create audit log
-      await createAuditLog('RESET', 'all', 'system', { action: 'reset_all_data' });
+      await createAuditLog('CREATE', 'timeslot', response.timeSlotId, slotData);
       
       setLoading(false);
-      return { success: true, message: 'All data has been reset successfully' };
+      return { success: true, data: response, message: 'Time slot created successfully' };
     } catch (err) {
-      console.error('Error resetting data:', err);
       setError(err.message);
       setLoading(false);
       return { success: false, error: err.message };
     }
-  }, [createAuditLog]);
+  }, [user, appointmentService, createAuditLog]);
+  
+  /**
+   * UPDATE TIME SLOT (Staff Only)
+   */
+  const updateTimeSlot = useCallback(async (timeSlotId, slotData) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to update time slot
+      const response = await appointmentService.updateTimeSlot(timeSlotId, slotData);
+      
+      // Update available slots
+      if (user.role === 'student') {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } else if (user.role === 'staff') {
+        // Staff need to see all slots for management
+        try {
+          const staffSlotsData = await appointmentService.getStaffSlots();
+          const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } catch (staffSlotsError) {
+          console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+          // Fallback to available slots if staff slots endpoint fails
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        }
+      }
+      
+      // Create audit log
+      await createAuditLog('UPDATE', 'timeslot', timeSlotId, slotData);
+      
+      setLoading(false);
+      return { success: true, data: response, message: 'Time slot updated successfully' };
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  }, [user, appointmentService, createAuditLog]);
 
-  // ============================================
-  // CONTEXT VALUE - useMemo
-  // ============================================
+  /**
+   * DELETE TIME SLOT (Staff Only)
+   */
+  const deleteTimeSlot = useCallback(async (timeSlotId) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Call API to delete time slot
+      await appointmentService.deleteTimeSlot(timeSlotId);
+      
+      // Update available slots
+      if (user.role === 'student') {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } else if (user.role === 'staff') {
+        // Staff need to see all slots for management
+        try {
+          const staffSlotsData = await appointmentService.getStaffSlots();
+          const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        } catch (staffSlotsError) {
+          console.warn('Failed to load staff slots, trying available slots:', staffSlotsError);
+          // Fallback to available slots if staff slots endpoint fails
+          const slotsData = await appointmentService.getAvailableSlots();
+          const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+          setAvailableSlots(transformedSlots);
+        }
+      }
+      
+      // Create audit log
+      await createAuditLog('DELETE', 'timeslot', timeSlotId, {});
+      
+      setLoading(false);
+      return { success: true, message: 'Time slot deleted successfully' };
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      return { success: false, error: err.message };
+    }
+  }, [user, appointmentService, createAuditLog]);
+
+// REFRESH DATA
+// ============================================
+  
+const refreshAppointments = useCallback(async () => {
+  if (!user) return;
+  
+  setLoading(true);
+  try {
+    // Load appointments based on user role
+    let appointmentsData = [];
+    if (user.role === 'staff') {
+      appointmentsData = await appointmentService.getAllAppointments();
+    } else if (user.role === 'student') {
+      try {
+        appointmentsData = await appointmentService.getStudentAppointments();
+      } catch (studentError) {
+        console.log('Student endpoint failed in refresh, trying user appointments:', studentError);
+        // Fallback to user appointments endpoint
+        appointmentsData = await appointmentService.getUserAppointments(user.userId);
+      }
+    } else {
+      appointmentsData = await appointmentService.getUserAppointments(user.userId);
+    }
+    
+    // Transform appointments for frontend compatibility
+    const transformedAppointments = appointmentsData.map(apt => 
+      transformAppointment(apt)
+    );
+    setAppointments(transformedAppointments);
+    
+    // Refresh slots based on user role
+    if (user.role === 'student') {
+      const slotsData = await appointmentService.getAvailableSlots();
+      const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+      setAvailableSlots(transformedSlots);
+    } else if (user.role === 'staff') {
+      try {
+        const staffSlotsData = await appointmentService.getStaffSlots();
+        const transformedSlots = staffSlotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      } catch (staffError) {
+        const slotsData = await appointmentService.getAvailableSlots();
+        const transformedSlots = slotsData.map(slot => transformTimeSlot(slot));
+        setAvailableSlots(transformedSlots);
+      }
+    }
+    
+    setError(null);
+  } catch (err) {
+    console.error('Error refreshing appointments:', err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+}, [user, appointmentService]);
+
+// CONTEXT VALUE - useMemo
+// ============================================
   
   const contextValue = useMemo(() => ({
     // State
     appointments,
+    availableSlots,
     loading,
     error,
     
@@ -389,12 +783,17 @@ export const AppointmentProvider = ({ children }) => {
     rescheduleAppointment,
     
     // Staff Functions
+    completeAppointment,
+    successAppointment,
     updateAppointmentStatus,
-    resetAllData,
+    createTimeSlot,
+    updateTimeSlot,
+    deleteTimeSlot,
     
     // Helpers
+    refreshAppointments,
     setError
-  }), [appointments, loading, error, userAppointments, upcomingAppointments, appointmentStats, bookAppointment, getAppointmentDetails, cancelAppointment, rescheduleAppointment, updateAppointmentStatus, resetAllData]);
+  }), [appointments, availableSlots, loading, error, userAppointments, upcomingAppointments, appointmentStats, bookAppointment, getAppointmentDetails, cancelAppointment, rescheduleAppointment, completeAppointment, successAppointment, updateAppointmentStatus, createTimeSlot, updateTimeSlot, deleteTimeSlot, refreshAppointments]);
 
   return (
     <AppointmentContext.Provider value={contextValue}>

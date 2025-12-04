@@ -20,21 +20,19 @@ import {
   Trash2,
   Save,
   X,
-  Search,
-  Loader
+  Search
 } from 'lucide-react';
 import { Button, Card, Modal, Input, Alert, EmptyState } from '../components/common';
 import './MedicalRecords.css';
 
 const MedicalRecords = () => {
-  const { user, isStaff } = useAuth();
+  const { isStaff } = useAuth();
   const { logAction } = useAuditLog();
   const { 
     records,
     latestVitalSigns, 
     activePrescriptions,
     recordStats,
-    loading,
     error: recordsError,
     createRecord,
     updateRecord,
@@ -289,15 +287,6 @@ const handleInputChange = useCallback((e) => {
     }
   }, [recordsError, setRecordsError]);
 
-  if (loading && records.length === 0) {
-    return (
-      <div className="medical-records-page loading-state">
-        <Loader className="spinner" size={48} />
-        <p>Loading medical records...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="medical-records-page">
       <div className="page-header">
@@ -392,12 +381,7 @@ const handleInputChange = useCallback((e) => {
         </h2>
         
         <div className="records-list">
-          {loading ? (
-            <div className="loading-container">
-              <Loader className="spinner" size={32} />
-              <p>Loading records...</p>
-            </div>
-          ) : filteredRecords.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <EmptyState
               icon={FileText}
               title={searchQuery ? 'No records found' : 'No medical records'}
@@ -783,7 +767,7 @@ const handleInputChange = useCallback((e) => {
             <Button 
               variant="primary"
               onClick={handleSave}
-              icon={isSaving ? Loader : Save}
+              icon={Save}
               disabled={isSaving}
             >
               {isSaving ? 'Saving...' : (modalMode === 'create' ? 'Create Record' : 'Save Changes')}
