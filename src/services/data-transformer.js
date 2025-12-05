@@ -6,18 +6,32 @@
 export const transformAppointment = (apt) => {
     if (!apt) return null;
     
-    return {
+    console.log('=== TRANSFORMING APPOINTMENT ===');
+    console.log('Raw appointment:', apt);
+    
+    // Extract date and time from nested timeSlot object
+    const scheduledDate = apt.timeSlot?.slotDate || apt.scheduledDate || apt.date || apt.appointmentDate;
+    const scheduledTime = apt.timeSlot?.startTime || apt.scheduledTime || apt.time || apt.appointmentTime;
+    
+    // Extract student ID from nested user object
+    const studentId = apt.user?.schoolId || apt.studentId || apt.userId;
+    
+    console.log('Extracted scheduledDate:', scheduledDate);
+    console.log('Extracted scheduledTime:', scheduledTime);
+    console.log('Extracted studentId:', studentId);
+    
+    const transformed = {
         // Core appointment fields
         appointmentId: apt.appointmentId || apt.id,
-        studentId: apt.studentId || apt.userId || apt.user?.schoolId,
-        staffId: apt.staffId || apt.providerId,
-        timeSlotId: apt.timeSlotId,
+        studentId: studentId,
+        staffId: apt.staffId || apt.providerId || apt.timeSlot?.staffId,
+        timeSlotId: apt.timeSlotId || apt.timeSlot?.timeSlotId,
         
         // Date/time fields - normalize to frontend format
-        scheduledDate: apt.timeSlot?.slotDate || apt.scheduledDate || apt.date || apt.appointmentDate,
-        scheduledTime: apt.timeSlot?.startTime || apt.scheduledTime || apt.time || apt.appointmentTime,
-        date: apt.timeSlot?.slotDate || apt.scheduledDate || apt.date || apt.appointmentDate,
-        time: apt.timeSlot?.startTime || apt.scheduledTime || apt.time || apt.appointmentTime,
+        scheduledDate: scheduledDate,
+        scheduledTime: scheduledTime,
+        date: scheduledDate,
+        time: scheduledTime,
         
         // Appointment details
         reason: apt.reason || apt.purpose || apt.description || '',
@@ -34,7 +48,7 @@ export const transformAppointment = (apt) => {
         
         // User information from backend response
         user: apt.user || {
-            schoolId: apt.studentId || apt.userId || 'Unknown'
+            schoolId: studentId || 'Unknown'
         },
         
         // Time slot information from backend response
@@ -43,6 +57,9 @@ export const transformAppointment = (apt) => {
         // Keep original data for reference
         _original: apt
     };
+    
+    console.log('Transformed appointment:', transformed);
+    return transformed;
 };
 
 export const transformTimeSlot = (slot) => {

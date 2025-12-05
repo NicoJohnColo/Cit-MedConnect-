@@ -69,8 +69,28 @@ export const AppointmentProvider = ({ children }) => {
         let appointmentsData = [];
         if (user.role === 'staff') {
           console.log('Loading all appointments for staff...');
-          appointmentsData = await appointmentService.getAllAppointments();
-          console.log('Staff appointments data:', appointmentsData);
+          try {
+            appointmentsData = await appointmentService.getAllAppointments();
+            console.log('=== STAFF APPOINTMENTS RAW DATA ===');
+            console.log('Total appointments received:', appointmentsData?.length || 0);
+            if (appointmentsData && appointmentsData.length > 0) {
+              console.log('First raw appointment:', appointmentsData[0]);
+              console.log('First appointment structure:');
+              console.log('- appointmentId:', appointmentsData[0].appointmentId);
+              console.log('- status:', appointmentsData[0].status);
+              console.log('- reason:', appointmentsData[0].reason);
+              console.log('- user object:', appointmentsData[0].user);
+              console.log('- user.schoolId:', appointmentsData[0].user?.schoolId);
+              console.log('- timeSlot object:', appointmentsData[0].timeSlot);
+              console.log('- timeSlot.slotDate:', appointmentsData[0].timeSlot?.slotDate);
+              console.log('- timeSlot.startTime:', appointmentsData[0].timeSlot?.startTime);
+            }
+          } catch (staffError) {
+            console.error('Failed to load staff appointments:', staffError);
+            console.error('Error details:', staffError.message);
+            console.error('Error stack:', staffError.stack);
+            appointmentsData = [];
+          }
         } else if (user.role === 'student') {
           console.log('Loading appointments for student...');
           console.log('Student user ID:', actualUserId);
@@ -103,19 +123,26 @@ export const AppointmentProvider = ({ children }) => {
         
         // Debug: Check if appointments have required fields
         if (appointmentsData.length > 0) {
+          console.log('=== CHECKING APPOINTMENT DATA ===');
           console.log('First appointment sample:', appointmentsData[0]);
           console.log('First appointment fields:', Object.keys(appointmentsData[0]));
+          console.log('Has timeSlot?', !!appointmentsData[0].timeSlot);
+          console.log('Has user?', !!appointmentsData[0].user);
         }
         
         // Transform appointments for frontend compatibility
-        const transformedAppointments = appointmentsData.map(apt => {
-          console.log('Transforming appointment:', apt);
+        const transformedAppointments = appointmentsData.map((apt, index) => {
+          console.log(`Transforming appointment ${index + 1}:`, apt);
           const transformed = transformAppointment(apt);
-          console.log('Transformed to:', transformed);
+          console.log(`Transformed to:`, transformed);
+          console.log(`- Date: ${transformed.scheduledDate || transformed.date}`);
+          console.log(`- Time: ${transformed.scheduledTime || transformed.time}`);
+          console.log(`- Student: ${transformed.studentId}`);
           return transformed;
         });
-        console.log('Final transformed appointments:', transformedAppointments);
-        console.log('Final transformed appointments length:', transformedAppointments.length);
+        console.log('=== FINAL TRANSFORMED APPOINTMENTS ===');
+        console.log('Total transformed:', transformedAppointments.length);
+        console.log('All transformed appointments:', transformedAppointments);
         setAppointments(transformedAppointments);
         
         // Load slots based on user role
@@ -218,21 +245,53 @@ export const AppointmentProvider = ({ children }) => {
     setError(null);
     
     try {
+      console.log('=== BOOKING APPOINTMENT ===');
+      console.log('Appointment data:', appointmentData);
+      
       // Call API to book appointment
       const response = await appointmentService.bookAppointment(
         appointmentData.slotId,
         {
-          studentId: user.userId,
+          studentId: user.userId || user.schoolId,
           reason: appointmentData.reason,
           notes: appointmentData.symptoms || appointmentData.notes
         }
       );
       
+      console.log('Booking response:', response);
+      
       // Transform response for frontend
       const newAppointment = transformAppointment(response);
+      console.log('Transformed appointment:', newAppointment);
       
-      // Update appointments state
-      setAppointments(prev => [...prev, newAppointment]);
+      // Update appointments state immediately
+      setAppointments(prev => {
+        const updated = [...prev, newAppointment];
+        console.log('Updated appointments list:', updated);
+        return updated;
+      });
+      
+      // Refresh appointments from server to ensure sync
+      setTimeout(async () => {
+        try {
+          console.log('Refreshing appointments from server...');
+          let appointmentsData = [];
+          if (user.role === 'staff') {
+            appointmentsData = await appointmentService.getAllAppointments();
+          } else if (user.role === 'student') {
+            try {
+              appointmentsData = await appointmentService.getStudentAppointments();
+            } catch {
+              appointmentsData = await appointmentService.getUserAppointments(user.userId || user.schoolId);
+            }
+          }
+          const transformedAppointments = appointmentsData.map(apt => transformAppointment(apt));
+          console.log('Refreshed appointments:', transformedAppointments);
+          setAppointments(transformedAppointments);
+        } catch (refreshError) {
+          console.error('Failed to refresh appointments:', refreshError);
+        }
+      }, 1000);
       
       // Update available slots (refresh)
       if (user.role === 'student') {

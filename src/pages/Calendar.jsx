@@ -12,10 +12,26 @@ import './Calendar.css';
 
 const Calendar = () => {
   const { isStaff } = useAuth();
-  const { userAppointments } = useAppointments();
+  const { userAppointments, loading, error } = useAppointments();
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Debug: Log appointments when they change
+  React.useEffect(() => {
+    console.log('=== CALENDAR DEBUG ===');
+    console.log('Is Staff:', isStaff);
+    console.log('User appointments:', userAppointments);
+    console.log('Appointments count:', userAppointments?.length || 0);
+    if (userAppointments && userAppointments.length > 0) {
+      console.log('First appointment:', userAppointments[0]);
+      console.log('Date field:', userAppointments[0].scheduledDate || userAppointments[0].date);
+      console.log('Time field:', userAppointments[0].scheduledTime || userAppointments[0].time);
+      console.log('Status:', userAppointments[0].status);
+      console.log('Student ID:', userAppointments[0].studentId);
+    }
+    console.log('All appointments:', userAppointments);
+  }, [userAppointments, isStaff]);
 
   // ============================================
   // TIME SLOTS CONFIGURATION
@@ -81,20 +97,68 @@ const Calendar = () => {
   // ✅ useMemo: Map appointments by date and time for quick lookup
   const appointmentMap = useMemo(() => {
     const map = {};
+    
+    if (!userAppointments || userAppointments.length === 0) {
+      console.log('No appointments to map');
+      return map;
+    }
+    
     userAppointments.forEach(apt => {
-      const dateStr = formatDate(new Date(apt.scheduledDate || apt.date));
-      const timeStr = apt.scheduledTime || apt.time;
-      const key = `${dateStr}-${timeStr}`;
-      map[key] = apt;
+      try {
+        // Get date - handle multiple possible field names
+        const dateValue = apt.scheduledDate || apt.date || apt.appointmentDate;
+        if (!dateValue) {
+          console.warn('Appointment missing date:', apt);
+          return;
+        }
+        
+        // Get time - handle multiple possible field names and formats
+        let timeValue = apt.scheduledTime || apt.time || apt.appointmentTime;
+        if (!timeValue) {
+          console.warn('Appointment missing time:', apt);
+          return;
+        }
+        
+        // Normalize time format to HH:MM (remove seconds if present)
+        if (timeValue.length === 8) { // HH:MM:SS format
+          timeValue = timeValue.substring(0, 5); // Get HH:MM only
+        }
+        
+        // Format date to YYYY-MM-DD
+        const dateStr = formatDate(new Date(dateValue));
+        const key = `${dateStr}-${timeValue}`;
+        
+        console.log(`Mapping appointment: key=${key}, appointment=`, apt);
+        map[key] = apt;
+      } catch (error) {
+        console.error('Error mapping appointment:', apt, error);
+      }
     });
+    
+    console.log('Final appointment map:', map);
+    console.log('Total appointments mapped:', Object.keys(map).length);
     return map;
   }, [userAppointments, formatDate]);
 
   // ✅ useCallback: Get appointment for specific slot
   const getAppointmentForSlot = useCallback((date, time) => {
     const dateStr = formatDate(date);
-    const key = `${dateStr}-${time}`;
-    return appointmentMap[key] || null;
+    
+    // Normalize time to HH:MM format
+    let normalizedTime = time;
+    if (time.length === 8) {
+      normalizedTime = time.substring(0, 5);
+    }
+    
+    const key = `${dateStr}-${normalizedTime}`;
+    const appointment = appointmentMap[key];
+    
+    // Debug only for appointments that exist
+    if (appointment) {
+      console.log(`Found appointment for slot: ${key}`, appointment);
+    }
+    
+    return appointment || null;
   }, [formatDate, appointmentMap]);
 
   // ============================================
@@ -143,14 +207,52 @@ const Calendar = () => {
             }
           </p>
         </div>
-        <Button 
-          variant="primary"
-          icon={CalendarIcon}
-          onClick={goToToday}
-        >
-          Today
-        </Button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {userAppointments && userAppointments.length > 0 && (
+            <span className="badge" style={{ 
+              background: '#4caf50', 
+              color: 'white', 
+              padding: '0.5rem 1rem', 
+              borderRadius: '20px',
+              fontSize: '0.875rem'
+            }}>
+              {userAppointments.length} Appointment{userAppointments.length !== 1 ? 's' : ''}
+            </span>
+          )}
+          <Button 
+            variant="primary"
+            icon={CalendarIcon}
+            onClick={goToToday}
+          >
+            Today
+          </Button>
+        </div>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <Card style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Loading appointments...</p>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card style={{ padding: '2rem', background: '#fee', border: '1px solid #fcc' }}>
+          <p style={{ color: '#c00' }}>Error loading appointments: {error}</p>
+        </Card>
+      )}
+
+      {/* No Appointments Message */}
+      {!loading && !error && userAppointments && userAppointments.length === 0 && (
+        <Card style={{ padding: '2rem', textAlign: 'center', marginBottom: '1rem' }}>
+          <p>
+            {isStaff 
+              ? 'No appointments have been scheduled yet. Students can book appointments from the Appointments page.'
+              : 'No appointments scheduled yet. Book an appointment to see it here!'}
+          </p>
+        </Card>
+      )}
 
       {/* Calendar Controls */}
       <Card className="calendar-controls">
@@ -217,14 +319,28 @@ const Calendar = () => {
                       className={`slot-cell ${appointment ? 'has-appointment' : ''}`}
                     >
                       {appointment && (
-                        <div className={`appointment-block ${appointment.status.toLowerCase()}`}>
-                          <div className="appointment-time">{appointment.scheduledTime || appointment.time}</div>
+                        <div 
+                          className={`appointment-block ${(appointment.status || 'scheduled').toLowerCase()}`}
+                          title={`${isStaff ? `Student: ${appointment.studentId || 'Unknown'}\n` : ''}Status: ${appointment.status}\nReason: ${appointment.reason || 'N/A'}\nTime: ${(appointment.scheduledTime || appointment.time || '').substring(0, 5)}`}
+                        >
+                          <div className="appointment-time">
+                            {(appointment.scheduledTime || appointment.time || '').substring(0, 5)}
+                          </div>
                           <div className="appointment-student">
-                            {isStaff ? (appointment.user?.schoolId || appointment.studentId || 'Unknown') : appointment.reason}
+                            {isStaff 
+                              ? (appointment.user?.schoolId || appointment.studentId || 'Unknown Student') 
+                              : (appointment.reason || 'Appointment')}
                           </div>
                           <div className="appointment-concern">
-                            {appointment.reason || 'Medical Appointment'}
+                            {isStaff 
+                              ? (appointment.reason || 'Medical Appointment')
+                              : `${appointment.location || 'Clinic'}`}
                           </div>
+                          {isStaff && appointment.notes && (
+                            <div className="appointment-notes" style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8 }}>
+                              {appointment.notes.substring(0, 30)}{appointment.notes.length > 30 ? '...' : ''}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

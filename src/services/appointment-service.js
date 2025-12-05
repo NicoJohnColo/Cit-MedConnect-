@@ -265,9 +265,13 @@ class AppointmentService {
     // Get all appointments (Staff only)
     async getAllAppointments(startDate = null, endDate = null) {
         try {
-            console.log('Fetching all appointments for staff...');
+            console.log('=== GET ALL APPOINTMENTS (STAFF) ===');
+            console.log('User:', this.user);
+            console.log('User role:', this.user?.role);
+            console.log('Headers:', this.baseHeaders);
+            
             const url = `${API_BASE_URL}${API_ENDPOINTS.STAFF_ALL_APPOINTMENTS}`;
-            console.log('URL:', url);
+            console.log('Fetching from URL:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -275,15 +279,31 @@ class AppointmentService {
             });
 
             console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
             if (!response.ok) {
-                throw new Error(`Failed to fetch all appointments: ${response.status}`);
+                const errorText = await response.text();
+                console.error('Failed to fetch all appointments:', response.status, errorText);
+                throw new Error(`Failed to fetch all appointments: ${response.status} - ${errorText}`);
             }
 
             const appointments = await response.json();
             console.log('Raw appointments from API:', appointments);
+            console.log('Number of appointments:', appointments.length);
+            
+            // Log first appointment details if available
+            if (appointments.length > 0) {
+                console.log('First appointment sample:', appointments[0]);
+                console.log('First appointment keys:', Object.keys(appointments[0]));
+            }
+            
             // Transform appointments for frontend compatibility
-            const transformed = appointments.map(apt => transformAppointment(apt));
-            console.log('Transformed appointments:', transformed);
+            const transformed = appointments.map(apt => {
+                const result = transformAppointment(apt);
+                console.log('Transformed appointment:', result);
+                return result;
+            });
+            console.log('All transformed appointments:', transformed);
             return transformed;
         } catch (error) {
             console.error('Error fetching all appointments:', error);
