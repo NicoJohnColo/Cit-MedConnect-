@@ -36,7 +36,6 @@ const Appointments = () => {
     loading, 
     bookAppointment, 
     cancelAppointment,
-    completeAppointment,
     successAppointment,
     rescheduleAppointment,
     createTimeSlot,

@@ -441,7 +441,7 @@ export const AppointmentProvider = ({ children }) => {
       setLoading(false);
       return { success: false, error: err.message };
     }
-  }, [appointments, availableSlots, appointmentService, createAuditLog, user]);
+  }, [appointments, availableSlots, appointmentService, createAuditLog]);
 
   // STAFF OPERATIONS - useCallback
   // ============================================
