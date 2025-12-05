@@ -76,6 +76,16 @@ export const notificationService = {
       { headers: getAuthHeaders() }
     );
     return response.data;
+  },
+
+  // Send notification to all staff members
+  sendNotificationToAllStaff: async (title, message, type = 'info') => {
+    const response = await axios.post(
+      `${API_URL}/notifications/broadcast/staff`,
+      { title, message, type },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
   }
 };
 

@@ -6,6 +6,7 @@
 import { API_BASE_URL, API_ENDPOINTS } from './api-endpoints';
 import { getUserId, getUserRole, getAuthHeaders } from './auth-helper';
 import { transformAppointment, transformTimeSlot } from './data-transformer';
+import { notificationService } from './notificationService';
 
 /**
  * APPOINTMENT SERVICE CLASS
@@ -136,6 +137,21 @@ class AppointmentService {
             
             const result = await response.json();
             console.log('Booking success response:', result);
+            
+            // Send notification to all staff members after successful booking
+            try {
+                const studentId = bookingData.studentId || userId;
+                await notificationService.sendNotificationToAllStaff(
+                    'New Appointment Booked',
+                    `Student ${studentId} has booked a new appointment. Reason: ${bookingData.reason}`,
+                    'info'
+                );
+                console.log('Notification sent successfully to all staff members');
+            } catch (notificationError) {
+                console.error('Failed to send notification to staff:', notificationError);
+                // Don't fail the whole operation if notification fails
+            }
+            
             return result;
         } catch (error) {
             console.error('Error booking appointment:', error);
