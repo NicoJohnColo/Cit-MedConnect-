@@ -37,12 +37,20 @@ const Calendar = () => {
   // TIME SLOTS CONFIGURATION
   // ============================================
   
-  // ✅ useMemo: Generate time slots (8 AM - 6 PM)
+  // ✅ useMemo: Generate time slots with 15-minute intervals (8 AM - 7 PM)
   const timeSlots = useMemo(() => {
     const slots = [];
     for (let hour = 8; hour <= 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+      for (let minute = 0; minute < 60; minute += 15) {
+        // Skip lunch break times (11:30 AM - 1:30 PM)
+        if ((hour === 11 && minute >= 30) || (hour === 12) || (hour === 13 && minute < 30)) {
+          continue;
+        }
+        slots.push({
+          time: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
+          hour,
+          minute
+        });
       }
     }
     return slots;
@@ -124,12 +132,22 @@ const Calendar = () => {
           timeValue = timeValue.substring(0, 5); // Get HH:MM only
         }
         
+        // Parse hours and minutes for better time slot calculation
+        const [hours, minutes] = timeValue.split(':').map(Number);
+        const timeInMinutes = hours * 60 + minutes;
+        
         // Format date to YYYY-MM-DD
         const dateStr = formatDate(new Date(dateValue));
         const key = `${dateStr}-${timeValue}`;
         
-        console.log(`Mapping appointment: key=${key}, appointment=`, apt);
-        map[key] = apt;
+        // Store the parsed time for easier calculations
+        map[key] = {
+          ...apt,
+          _timeInMinutes: timeInMinutes,
+          _timeString: timeValue
+        };
+        
+        console.log(`Mapping appointment: key=${key}, timeInMinutes=${timeInMinutes}`, apt);
       } catch (error) {
         console.error('Error mapping appointment:', apt, error);
       }
@@ -150,15 +168,29 @@ const Calendar = () => {
       normalizedTime = time.substring(0, 5);
     }
     
-    const key = `${dateStr}-${normalizedTime}`;
-    const appointment = appointmentMap[key];
-    
-    // Debug only for appointments that exist
-    if (appointment) {
-      console.log(`Found appointment for slot: ${key}`, appointment);
+    // Check for exact match first
+    const exactKey = `${dateStr}-${normalizedTime}`;
+    const exactAppointment = appointmentMap[exactKey];
+    if (exactAppointment) {
+      return exactAppointment;
     }
     
-    return appointment || null;
+    // If no exact match, find the closest appointment within 15 minutes
+    const [hours, minutes] = normalizedTime.split(':').map(Number);
+    const slotTimeInMinutes = hours * 60 + minutes;
+    
+    // Find all appointments for this date
+    const dateAppointments = Object.entries(appointmentMap)
+      .filter(([key]) => key.startsWith(dateStr))
+      .map(([_, apt]) => apt);
+    
+    // Find the closest appointment within 15 minutes
+    const closestAppointment = dateAppointments.find(apt => {
+      const timeDiff = Math.abs(apt._timeInMinutes - slotTimeInMinutes);
+      return timeDiff <= 15; // Within 15 minutes of the slot
+    });
+    
+    return closestAppointment || null;
   }, [formatDate, appointmentMap]);
 
   // ============================================
@@ -308,46 +340,81 @@ const Calendar = () => {
 
           {/* Time Slots Grid */}
           <div className="calendar-body">
-            {timeSlots.map((time, timeIndex) => (
-              <div key={timeIndex} className="time-row">
-                <div className="time-cell">{time}</div>
-                {weekDays.map((day, dayIndex) => {
-                  const appointment = getAppointmentForSlot(day, time);
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`slot-cell ${appointment ? 'has-appointment' : ''}`}
-                    >
-                      {appointment && (
-                        <div 
-                          className={`appointment-block ${(appointment.status || 'scheduled').toLowerCase()}`}
-                          title={`${isStaff ? `Student: ${appointment.studentId || 'Unknown'}\n` : ''}Status: ${appointment.status}\nReason: ${appointment.reason || 'N/A'}\nTime: ${(appointment.scheduledTime || appointment.time || '').substring(0, 5)}`}
-                        >
-                          <div className="appointment-time">
-                            {(appointment.scheduledTime || appointment.time || '').substring(0, 5)}
+            {timeSlots.map((slot, timeIndex) => {
+              const isLunchBreak = (slot.hour === 11 && slot.minute >= 30) || 
+                                 (slot.hour === 12) || 
+                                 (slot.hour === 13 && slot.minute < 30);
+              const isAvailable = !isLunchBreak; // Add your availability logic here
+              
+              return (
+                <div key={timeIndex} className="time-row">
+                  <div className="time-cell">{slot.time}</div>
+                  {weekDays.map((day, dayIndex) => {
+                    const appointment = getAppointmentForSlot(day, slot.time);
+                    const isSlotBooked = !!appointment;
+                    const isCurrentSlot = appointment && 
+                                      appointment._timeString === slot.time;
+                    
+                    // Only show appointment in the exact time slot or if it's the closest one
+                    if (appointment && !isCurrentSlot && 
+                        Math.abs(appointment._timeInMinutes - (slot.hour * 60 + slot.minute)) > 15) {
+                      return <div key={dayIndex} className="slot-cell" />;
+                    }
+                    
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={`slot-cell ${isSlotBooked ? 'has-appointment' : ''} ${isLunchBreak ? 'lunch-break' : ''}`}
+                        title={isLunchBreak ? 'Lunch Break (11:30 AM - 1:30 PM)' : ''}
+                      >
+                        {isLunchBreak ? (
+                          <div className="appointment-block lunch">
+                            <div className="appointment-time">LUNCH</div>
+                            <div className="appointment-student">Not Available</div>
                           </div>
-                          <div className="appointment-student">
-                            {isStaff 
-                              ? (appointment.user?.schoolId || appointment.studentId || 'Unknown Student') 
-                              : (appointment.reason || 'Appointment')}
-                          </div>
-                          <div className="appointment-concern">
-                            {isStaff 
-                              ? (appointment.reason || 'Medical Appointment')
-                              : `${appointment.location || 'Clinic'}`}
-                          </div>
-                          {isStaff && appointment.notes && (
-                            <div className="appointment-notes" style={{ fontSize: '0.75rem', marginTop: '0.25rem', opacity: 0.8 }}>
-                              {appointment.notes.substring(0, 30)}{appointment.notes.length > 30 ? '...' : ''}
+                        ) : isSlotBooked ? (
+                          <div 
+                            className={`appointment-block ${(appointment.status || 'scheduled').toLowerCase()}`}
+                            title={`${isStaff ? `Student: ${appointment.studentId || 'Unknown'}\n` : ''}Status: ${appointment.status || 'Scheduled'}\nReason: ${appointment.reason || 'N/A'}\nTime: ${appointment._timeString || ''}`}
+                            style={{
+                              backgroundColor: appointment.status === 'completed' ? '#e8f5e9' : 
+                                            appointment.status === 'cancelled' ? '#ffebee' : 
+                                            appointment.status === 'pending' ? '#fff3e0' : '#e3f2fd'
+                            }}
+                          >
+                            <div className="appointment-time">
+                              {appointment._timeString}
+                              {appointment.status === 'pending' && ' ⏳'}
+                              {appointment.status === 'completed' && ' ✓'}
+                              {appointment.status === 'cancelled' && ' ✗'}
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                            <div className="appointment-student">
+                              {isStaff 
+                                ? (appointment.user?.schoolId || appointment.studentId || 'Unknown Student') 
+                                : (appointment.reason || 'Appointment')}
+                            </div>
+                            <div className="appointment-concern">
+                              {isStaff 
+                                ? (appointment.reason || 'Medical Appointment')
+                                : `${appointment.location || 'Clinic'}`}
+                            </div>
+                            {isStaff && appointment.notes && (
+                              <div className="appointment-notes">
+                                {appointment.notes.substring(0, 30)}{appointment.notes.length > 30 ? '...' : ''}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="appointment-block available" title="Available">
+                            {/* Empty div to maintain layout */}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
       </Card>
@@ -357,16 +424,12 @@ const Calendar = () => {
         <h3>Legend</h3>
         <div className="legend-items">
           <div className="legend-item">
-            <div className="legend-color scheduled"></div>
-            <span>Scheduled</span>
+            <div className="legend-color" style={{ background: '#e3f2fd' }}>🔵</div>
+            <span>Booked</span>
           </div>
           <div className="legend-item">
-            <div className="legend-color completed"></div>
-            <span>Completed</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color cancelled"></div>
-            <span>Cancelled</span>
+            <div className="legend-color" style={{ background: '#ffebee' }}>🔴</div>
+            <span>Unavailable / Lunch</span>
           </div>
         </div>
       </Card>
