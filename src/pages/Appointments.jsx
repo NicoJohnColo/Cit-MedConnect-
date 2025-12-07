@@ -726,17 +726,24 @@ const Appointments = () => {
                       })}
                     </h4>
                     <div className="slots-grid">
-                      {slots.map(slot => (
-                        <button
-                          key={slot.slotId}
-                          className={`slot-button ${selectedSlot?.slotId === slot.slotId ? 'selected' : ''}`}
-                          onClick={() => handleSelectSlot(slot)}
-                        >
-                          <Clock size={16} />
-                          <span>{slot.time}</span>
-                          <small>{slot.location}</small>
-                        </button>
-                      ))}
+                      {slots.map(slot => {
+                        const isBooked = !slot.available || slot.currentBookings >= slot.maxBookings;
+                        return (
+                          <button
+                            key={slot.slotId}
+                            className={`slot-button ${selectedSlot?.slotId === slot.slotId ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
+                            onClick={() => !isBooked && handleSelectSlot(slot)}
+                            disabled={isBooked}
+                          >
+                            <Clock size={16} />
+                            <span>{slot.time}</span>
+                            <small>{slot.location}</small>
+                            <span className={`slot-status ${isBooked ? 'booked-status' : 'available-status'}`}>
+                              {isBooked ? 'Booked' : 'Available'}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
@@ -959,30 +966,33 @@ const Appointments = () => {
             <div className="slots-list">
               <h4>Available Slots ({availableSlots.length})</h4>
               <div className="slots-table">
-                {availableSlots.map(slot => (
-                  <div key={slot.slotId} className="slot-item">
-                    <div className="slot-info">
-                      <strong>{new Date(slot.date).toLocaleDateString()} - {slot.time}</strong>
-                      <small>{slot.location} • {slot.isAvailable ? 'Available' : 'Booked'}</small>
+                {availableSlots.map(slot => {
+                  const isBooked = !slot.available || slot.currentBookings >= slot.maxBookings;
+                  return (
+                    <div key={slot.slotId} className="slot-item">
+                      <div className="slot-info">
+                        <strong>{new Date(slot.date).toLocaleDateString()} - {slot.time}</strong>
+                        <small>{slot.location} • {isBooked ? 'Booked' : 'Available'}</small>
+                      </div>
+                      <div className="slot-actions">
+                        <button
+                          className="action-btn action-btn-edit"
+                          onClick={() => handleEditSlot(slot)}
+                          disabled={isBooked}
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          className="action-btn action-btn-delete"
+                          onClick={() => handleDeleteSlot(slot)}
+                          disabled={isBooked}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="slot-actions">
-                      <button
-                        className="action-btn action-btn-edit"
-                        onClick={() => handleEditSlot(slot)}
-                        disabled={!slot.isAvailable}
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        className="action-btn action-btn-delete"
-                        onClick={() => handleDeleteSlot(slot)}
-                        disabled={!slot.isAvailable}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
