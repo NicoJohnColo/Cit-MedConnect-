@@ -286,6 +286,49 @@
   opacity: 0.8;
 }
 
+/* Slot Status Indicators */
+.slot-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.available-status {
+  background-color: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #10B981;
+}
+
+.booked-status {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #EF4444;
+}
+
+/* Booked slot styling */
+.slot-button.booked {
+  background-color: #F9FAFB;
+  border-color: #E5E7EB;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.slot-button.booked:hover {
+  border-color: #E5E7EB;
+  background-color: #F9FAFB;
+  transform: none;
+}
+
+.slot-button.booked .slot-status {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #EF4444;
+}
+
 /* Confirmation Details */
 .confirmation-details {
   background-color: #F9FAFB;
