@@ -16,7 +16,6 @@ const getAuthHeaders = () => {
 };
 
 export const notificationService = {
-  // Fetch user notifications
   fetchUserNotifications: async (schoolId, userRole) => {
     const response = await axios.get(
       `${API_URL}/notifications/user/${schoolId}/role/${userRole}`,
@@ -25,7 +24,7 @@ export const notificationService = {
     return response.data;
   },
 
-  // Mark notification as read
+
   markAsRead: async (notificationId) => {
     const response = await axios.put(
       `${API_URL}/notifications/${notificationId}/read`,
@@ -35,7 +34,6 @@ export const notificationService = {
     return response.data;
   },
 
-  // Delete notification
   deleteNotification: async (notificationId) => {
     await axios.delete(
       `${API_URL}/notifications/${notificationId}`,
@@ -43,7 +41,7 @@ export const notificationService = {
     );
   },
 
-  // Send notification to all students (Staff only)
+
   sendNotificationToAllStudents: async (title, message, type = 'info') => {
     const response = await axios.post(
       `${API_URL}/notifications/broadcast/students`,
@@ -53,7 +51,7 @@ export const notificationService = {
     return response.data;
   },
 
-  // Send notification to everyone (Staff only)
+
   sendNotificationToEveryone: async (title, message, type = 'info') => {
     const response = await axios.post(
       `${API_URL}/notifications/broadcast/all`,
@@ -63,7 +61,7 @@ export const notificationService = {
     return response.data;
   },
 
-  // Send notification to a specific user
+
   sendNotificationToUser: async (schoolId, title, message, type = 'info') => {
     const response = await axios.post(
       `${API_URL}/notifications/send`,
@@ -78,7 +76,7 @@ export const notificationService = {
     return response.data;
   },
 
-  // Send notification to all staff members
+ 
   sendNotificationToAllStaff: async (title, message, type = 'info') => {
     const response = await axios.post(
       `${API_URL}/notifications/broadcast/staff`,

@@ -31,7 +31,7 @@ export const API_ENDPOINTS = {
     CALENDAR_SUMMARY: '/calendar/summary'
 };
 
-// Default headers for API requests
+
 export const DEFAULT_HEADERS = {
     'Content-Type': 'application/json',
 };
@@ -44,7 +44,7 @@ export const getAuthHeaders = (user) => {
         headers['X-User-ID'] = user.userId || user.schoolId;
         headers['X-User-Role'] = user.role?.toUpperCase() || 'STUDENT';
         
-        // Add JWT token if available
+       
         if (user.token) {
             headers['Authorization'] = `Bearer ${user.token}`;
         }
