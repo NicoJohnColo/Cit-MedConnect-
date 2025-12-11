@@ -45,7 +45,7 @@ export const getAuthHeaders = (user) => {
         headers['X-User-ID'] = getUserId(user);
         headers['X-User-Role'] = getUserRole(user).toUpperCase();
         
-        // Add JWT token if available
+        
         if (user.token) {
             headers['Authorization'] = `Bearer ${user.token}`;
         }

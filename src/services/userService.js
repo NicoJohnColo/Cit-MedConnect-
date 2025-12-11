@@ -27,21 +27,18 @@ apiClient.interceptors.response.use(
   }
 );
 
-/**
- * User Service - All CRUD operations for User management
- * Matches exactly with Spring Boot UserController endpoints
- */
+
 export const userService = {
   /**
    * Create a new user
-   * POST http://localhost:8080/api/users/
+   * 
    */
   createUser: async (userData) => {
     try {
-      // Ensure password field is included (required by backend)
+      
       const userDataWithPassword = {
         ...userData,
-        password: userData.password || 'defaultPassword123' // Default password if not provided
+        password: userData.password || 'defaultPassword123' 
       };
       
       const response = await apiClient.post('/', userDataWithPassword);
@@ -61,7 +58,7 @@ export const userService = {
 
   /**
    * Get all users
-   * GET http://localhost:8080/api/users/
+   * 
    */
   getAllUsers: async () => {
     try {
@@ -82,7 +79,7 @@ export const userService = {
 
   /**
    * Get user by ID
-   * GET http://localhost:8080/api/users/{id}
+   * 
    */
   getUserById: async (userId) => {
     try {
@@ -103,7 +100,7 @@ export const userService = {
 
   /**
    * Update user by School ID
-   * PUT http://localhost:8080/api/users/school-id/{schoolId}
+   * 
    */
   updateUserBySchoolId: async (schoolId, userData) => {
     try {
@@ -124,7 +121,7 @@ export const userService = {
 
   /**
    * Update user by ID (legacy - uses database ID)
-   * PUT http://localhost:8080/api/users/{id}
+   * 
    */
   updateUser: async (userId, userData) => {
     try {
@@ -145,7 +142,7 @@ export const userService = {
 
   /**
    * Delete user by ID
-   * DELETE http://localhost:8080/api/users/{id}
+   * 
    */
   deleteUser: async (userId) => {
     try {
@@ -166,7 +163,7 @@ export const userService = {
 
   /**
    * Check if email exists
-   * GET http://localhost:8080/api/users/email/{email}
+   * 
    */
   checkEmailExists: async (email) => {
     try {
@@ -187,7 +184,7 @@ export const userService = {
 
   /**
    * Login user with email and password
-   * POST http://localhost:8080/api/users/login
+   * 
    */
   login: async (email, password) => {
     try {
@@ -208,7 +205,7 @@ export const userService = {
 
   /**
    * Get user by email
-   * GET http://localhost:8080/api/users/email/user/{email}
+   * 
    */
   getUserByEmail: async (email) => {
     try {
@@ -229,7 +226,7 @@ export const userService = {
 
   /**
    * Get user profile by email
-   * GET http://localhost:8080/api/users/profile/{email}
+   * 
    */
   getUserProfile: async (email) => {
     try {
@@ -250,7 +247,7 @@ export const userService = {
 
   /**
    * Update user profile by email
-   * PUT http://localhost:8080/api/users/profile/{email}
+   * 
    */
   updateUserProfile: async (email, updates) => {
     try {

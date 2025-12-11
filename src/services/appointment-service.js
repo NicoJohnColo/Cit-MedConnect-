@@ -10,7 +10,7 @@ import { notificationService } from './notificationService';
 
 /**
  * APPOINTMENT SERVICE CLASS
- * Provides methods for all appointment and time slot operations
+ * 
  */
 class AppointmentService {
     constructor(user) {
@@ -18,28 +18,25 @@ class AppointmentService {
         this.baseHeaders = getAuthHeaders(user);
     }
 
-    // Update user and headers when authentication changes
+    
     updateUser(user) {
         this.user = user;
         this.baseHeaders = getAuthHeaders(user);
     }
 
-    /**
-     * STUDENT OPERATIONS
-     */
-
-    // Get available time slots for students
+   
+    
     async getAvailableSlots(date = null) {
         try {
             console.log('Fetching available slots for:', getUserRole(this.user), 'user');
             
-            // Always provide a date - default to today or tomorrow to ensure we get results
+            
             const targetDate = date || new Date().toISOString().split('T')[0];
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDate = tomorrow.toISOString().split('T')[0];
             
-            // Try today first, then tomorrow if no results
+            
             let url = `${API_BASE_URL}${API_ENDPOINTS.AVAILABLE_SLOTS}?date=${targetDate}`;
             
             console.log('Making request to:', url);
@@ -61,7 +58,7 @@ class AppointmentService {
             let slots = await response.json();
             console.log('Raw slots data for today:', slots);
             
-            // If no slots for today, try tomorrow
+            
             if (slots.length === 0 && !date) {
                 console.log('No slots for today, trying tomorrow...');
                 url = `${API_BASE_URL}${API_ENDPOINTS.AVAILABLE_SLOTS}?date=${tomorrowDate}`;
@@ -78,7 +75,7 @@ class AppointmentService {
                 }
             }
             
-            // If still no slots, try getting all slots and filter client-side
+            
             if (slots.length === 0) {
                 console.log('No available slots found, fetching all slots...');
                 const allSlotsResponse = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TIME_SLOTS}`, {
@@ -88,13 +85,13 @@ class AppointmentService {
                 
                 if (allSlotsResponse.ok) {
                     const allSlots = await allSlotsResponse.json();
-                    // Filter for available slots
+                    
                     slots = allSlots.filter(slot => slot.available === true && slot.currentBookings < slot.maxBookings);
                     console.log('Filtered available slots from all slots:', slots);
                 }
             }
             
-            // Transform slots for frontend compatibility
+            
             const transformedSlots = slots.map(slot => transformTimeSlot(slot));
             console.log('Transformed slots:', transformedSlots);
             
@@ -105,7 +102,7 @@ class AppointmentService {
         }
     }
 
-    // Book an appointment (Student only)
+    
     async bookAppointment(timeSlotId, bookingData) {
         try {
             const userRole = getUserRole(this.user);
@@ -138,7 +135,7 @@ class AppointmentService {
             const result = await response.json();
             console.log('Booking success response:', result);
             
-            // Send notification to all staff members after successful booking
+            
             try {
                 const studentId = bookingData.studentId || userId;
                 await notificationService.sendNotificationToAllStaff(
@@ -149,7 +146,7 @@ class AppointmentService {
                 console.log('Notification sent successfully to all staff members');
             } catch (notificationError) {
                 console.error('Failed to send notification to staff:', notificationError);
-                // Don't fail the whole operation if notification fails
+                
             }
             
             return result;
@@ -159,7 +156,7 @@ class AppointmentService {
         }
     }
 
-    // Get student's own appointments (Student only)
+    
     async getStudentAppointments() {
         try {
             console.log('Fetching student appointments...');
@@ -178,7 +175,7 @@ class AppointmentService {
 
             const appointments = await response.json();
             console.log('Raw appointments from API:', appointments);
-            // Transform appointments for frontend compatibility
+            
             const transformed = appointments.map(apt => transformAppointment(apt));
             console.log('Transformed appointments:', transformed);
             return transformed;
@@ -188,7 +185,7 @@ class AppointmentService {
         }
     }
 
-    // Get user's appointments (Student - own appointments only, Staff - all appointments)
+    
     async getUserAppointments(userId) {
         try {
             console.log('Fetching appointments for user:', userId);
@@ -207,7 +204,7 @@ class AppointmentService {
 
             const appointments = await response.json();
             console.log('Raw appointments from API:', appointments);
-            // Transform appointments for frontend compatibility
+            
             const transformed = appointments.map(apt => transformAppointment(apt));
             console.log('Transformed appointments:', transformed);
             return transformed;
@@ -217,7 +214,7 @@ class AppointmentService {
         }
     }
 
-    // Reschedule appointment (Student only)
+    
     async rescheduleAppointment(appointmentId, newTimeSlotId) {
         try {
             const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.RESCHEDULE_APPOINTMENT(appointmentId)}`, {
@@ -238,7 +235,7 @@ class AppointmentService {
         }
     }
 
-    // Cancel appointment (Student/Staff)
+    
     async cancelAppointment(appointmentId) {
         try {
             const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CANCEL_APPOINTMENT(appointmentId)}`, {
@@ -262,7 +259,7 @@ class AppointmentService {
      * STAFF OPERATIONS
      */
 
-    // Get all appointments (Staff only)
+    
     async getAllAppointments(startDate = null, endDate = null) {
         try {
             console.log('=== GET ALL APPOINTMENTS (STAFF) ===');
@@ -291,13 +288,13 @@ class AppointmentService {
             console.log('Raw appointments from API:', appointments);
             console.log('Number of appointments:', appointments.length);
             
-            // Log first appointment details if available
+            
             if (appointments.length > 0) {
                 console.log('First appointment sample:', appointments[0]);
                 console.log('First appointment keys:', Object.keys(appointments[0]));
             }
             
-            // Transform appointments for frontend compatibility
+            
             const transformed = appointments.map(apt => {
                 const result = transformAppointment(apt);
                 console.log('Transformed appointment:', result);
@@ -311,7 +308,7 @@ class AppointmentService {
         }
     }
 
-    // Complete appointment (Staff only)
+    
     async completeAppointment(appointmentId) {
         try {
             const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.COMPLETE_APPOINTMENT(appointmentId)}`, {
@@ -331,7 +328,7 @@ class AppointmentService {
         }
     }
 
-    // Mark appointment as success (Staff only)
+    
     async successAppointment(appointmentId) {
         try {
             const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.COMPLETE_APPOINTMENT(appointmentId)}`, {
@@ -352,9 +349,7 @@ class AppointmentService {
         }
     }
 
-    /**
-     * TIME SLOT MANAGEMENT (Staff)
-     */
+    
 
     // Create time slot (Staff only)
     async createTimeSlot(slotData) {
@@ -439,14 +434,14 @@ class AppointmentService {
                 throw new Error(errorData.message || `Failed to delete time slot: ${response.status}`);
             }
 
-            return true; // Delete operations typically return 204 No Content
+            return true; 
         } catch (error) {
             console.error('Error deleting time slot:', error);
             throw error;
         }
     }
 
-    // Get staff's time slots (Staff only)
+    
     async getStaffSlots(staffId = null) {
         try {
             const id = staffId || getUserId(this.user);
@@ -466,7 +461,7 @@ class AppointmentService {
             }
 
             const slots = await response.json();
-            // Transform slots for frontend compatibility
+            
             return slots.map(slot => transformTimeSlot(slot));
         } catch (error) {
             console.error('Error fetching staff slots, falling back to available slots:', error);
@@ -478,14 +473,14 @@ class AppointmentService {
      * UTILITY METHODS
      */
 
-    // Calculate end time based on start time (assuming 1-hour slots)
+    
     calculateEndTime(startTime) {
         if (!startTime) return null;
         
-        // Handle different time formats
+        
         let timeStr = startTime;
-        if (startTime.length === 5) { // "HH:MM" format
-            timeStr = `${startTime}:00`; // Convert to "HH:MM:00"
+        if (startTime.length === 5) { 
+            timeStr = `${startTime}:00`; 
         }
         
         const [hours, minutes] = timeStr.split(':').map(Number);
@@ -494,18 +489,18 @@ class AppointmentService {
         return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
     }
 
-    // Convert time string to proper format
+    
     formatTimeForAPI(time) {
         if (!time) return null;
         
-        // Handle different time formats
-        if (time.length === 5) { // "HH:MM" format
-            return `${time}:00`; // Convert to "HH:MM:00"
+        
+        if (time.length === 5) { 
+            return `${time}:00`; 
         }
         
-        return time; // Already in correct format
+        return time; 
     }
 }
 
-// Export singleton instance
+
 export default AppointmentService;

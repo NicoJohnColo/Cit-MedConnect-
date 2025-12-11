@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Base API configuration
+
 const API_BASE_URL = 'http://localhost:8080/api/medical-records';
 
-// Create axios instance with default configuration
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,7 +12,7 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor - log all requests
+
 apiClient.interceptors.request.use(
   (config) => {
     console.log('=== AXIOS REQUEST ===');
@@ -28,7 +28,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+
 apiClient.interceptors.response.use(
   (response) => {
     console.log('=== AXIOS RESPONSE SUCCESS ===');
@@ -54,21 +54,18 @@ apiClient.interceptors.response.use(
   }
 );
 
-/**
- * Medical Records Service - All CRUD operations
- * Matches exactly with Spring Boot MedicalRecordController endpoints
- */
+
 export const medicalRecordsService = {
   /**
    * Create a new medical record (Staff Only)
-   * POST http://localhost:8080/api/medical-records/
+   * 
    */
   createMedicalRecord: async (recordData) => {
     try {
       console.log('=== CREATING MEDICAL RECORD ===');
       console.log('Original recordData:', recordData);
       
-      // Validate required fields
+
       if (!recordData.userId || recordData.userId.trim() === '') {
         console.error('ERROR: userId is missing or empty');
         return {
@@ -87,7 +84,7 @@ export const medicalRecordsService = {
         };
       }
       
-      // Clean the data before sending
+
       const cleanedData = {
         userId: recordData.userId.trim(),
         diagnosis: recordData.diagnosis.trim(),
@@ -100,7 +97,7 @@ export const medicalRecordsService = {
         notes: recordData.notes?.trim() || ''
       };
       
-      // Only add appointmentId if it has a value
+
       if (recordData.appointmentId && recordData.appointmentId !== '' && recordData.appointmentId !== null) {
         cleanedData.appointmentId = parseInt(recordData.appointmentId);
       }
@@ -112,8 +109,7 @@ export const medicalRecordsService = {
       
       console.log('Response received:', response.status, response.data);
       
-      // Note: Notification is sent by the backend automatically
-      // No need to send it from frontend to avoid duplicates
+      
       
       return {
         success: true,
@@ -131,7 +127,7 @@ export const medicalRecordsService = {
       console.error('Full error response:', error.response);
       console.error('Stack trace:', error.stack);
       
-      // Extract meaningful error message
+
       let errorMessage = 'Failed to create medical record';
       
       if (error.response?.data) {
@@ -157,7 +153,7 @@ export const medicalRecordsService = {
 
   /**
    * Get all medical records (Staff Only)
-   * GET http://localhost:8080/api/medical-records/
+   * 
    */
   getAllMedicalRecords: async () => {
     try {
@@ -186,7 +182,7 @@ export const medicalRecordsService = {
 
   /**
    * Get medical record by ID
-   * GET http://localhost:8080/api/medical-records/{id}
+   * 
    */
   getMedicalRecordById: async (recordId) => {
     try {
@@ -207,7 +203,7 @@ export const medicalRecordsService = {
 
   /**
    * Get medical records by User ID (Student's own records or Staff view)
-   * GET http://localhost:8080/api/medical-records/user/{userId}
+   * 
    */
   getMedicalRecordsByUserId: async (userId) => {
     try {
@@ -228,7 +224,7 @@ export const medicalRecordsService = {
 
   /**
    * Get medical records by User ID (sorted by date)
-   * GET http://localhost:8080/api/medical-records/user/{userId}/sorted
+   * 
    */
   getMedicalRecordsByUserIdSorted: async (userId) => {
     try {
@@ -249,7 +245,7 @@ export const medicalRecordsService = {
 
   /**
    * Get medical record by Appointment ID
-   * GET http://localhost:8080/api/medical-records/appointment/{appointmentId}
+   * 
    */
   getMedicalRecordByAppointmentId: async (appointmentId) => {
     try {
@@ -270,7 +266,7 @@ export const medicalRecordsService = {
 
   /**
    * Update medical record (Staff Only)
-   * PUT http://localhost:8080/api/medical-records/{id}
+   * 
    */
   updateMedicalRecord: async (recordId, recordData) => {
     try {
@@ -299,7 +295,7 @@ export const medicalRecordsService = {
 
   /**
    * Delete medical record (Staff Only)
-   * DELETE http://localhost:8080/api/medical-records/{id}
+   * 
    */
   deleteMedicalRecord: async (recordId) => {
     try {
@@ -321,7 +317,7 @@ export const medicalRecordsService = {
 
   /**
    * Get record count by user ID
-   * GET http://localhost:8080/api/medical-records/user/{userId}/count
+   * 
    */
   getRecordCountByUserId: async (userId) => {
     try {
