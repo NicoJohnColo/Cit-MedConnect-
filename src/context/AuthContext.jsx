@@ -307,18 +307,31 @@ export const AuthProvider = ({ children }) => {
       
       const data = await response.json();
       
-      if (response.ok && data.user) {
+      // CRITICAL FIX: Check response status first
+      if (!response.ok) {
+        // Backend rejected the login
+        throw new Error(data.error || 'Staff login failed. Access denied.');
+      }
+      
+      if (data.user) {
         const staffUser = data.user;
+        
+        // CRITICAL FIX: Verify the role from backend response
+        // DO NOT hardcode or override the role
+        if (staffUser.role !== 'staff') {
+          throw new Error(`Access denied. Your account role is "${staffUser.role}", not "staff".`);
+        }
         
         // Set session expiry
         const expiryDuration = rememberMe ? 24 * 60 * 60 * 1000 : 2 * 60 * 60 * 1000;
         const expiry = new Date(Date.now() + expiryDuration);
         
-        // Create the staff user object with staff role
+        // Create the user object with ACTUAL role from database
+        // DO NOT modify the role - use whatever backend returns
         const userToSave = {
           ...staffUser,
           isAuthenticated: true,
-          role: 'staff',
+          // role: staffUser.role, // Use actual role from backend (this is already in ...staffUser)
           adminName: data.adminName,
           permissions: data.permissions
         };
@@ -335,19 +348,30 @@ export const AuthProvider = ({ children }) => {
         }
         
         // Create audit log
-        createAuditLog('STAFF_LOGIN', 'user', staffUser.userId, { schoolId, role: 'admin' }).catch(console.error);
+        createAuditLog('STAFF_LOGIN', 'user', staffUser.schoolId || staffUser.userId, { 
+          schoolId, 
+          role: staffUser.role // Log actual role from database
+        }).catch(console.error);
         
         return { success: true, user: userToSave, adminData: data };
       } else {
-        throw new Error(data.error || 'Staff login failed');
+        throw new Error('Invalid response from server');
       }
       
     } catch (err) {
       const errorMessage = err.message || 'Staff login failed. Please check your credentials and try again.';
       setError(errorMessage);
+      
+      // Make sure to clear any partial auth state
+      if (isMounted.current) {
+        setUser(null);
+        setSessionExpiry(null);
+      }
+      clearAuthStorage();
+      
       return { success: false, error: errorMessage };
     }
-  }, [createAuditLog, startSessionTimer]);
+  }, [createAuditLog, startSessionTimer, clearAuthStorage]);
 
   // ============================================
   // FETCH PROFILE FUNCTION
