@@ -1,15 +1,19 @@
 // ============================================
-// CUSTOM HOOK - useAuth (Enhanced)
+// CUSTOM HOOK - useAuth (Enhanced with Role Verification)
 // src/hooks/useAuth.js
 // ============================================
 
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import useVerifiedRole from './useVerifiedRole';
 
 /**
  * CUSTOM HOOK - useAuth
- * Provides access to authentication context with role detection
- * @returns {Object} Auth context with user, loading, auth methods, and role helpers
+ * Provides access to authentication context with VERIFIED role detection
+ * 
+ * SECURITY: Now uses backend-verified roles instead of trusting localStorage
+ * 
+ * @returns {Object} Auth context with user, loading, auth methods, and VERIFIED role helpers
  * @throws {Error} If used outside of AuthProvider
  */
 const useAuth = () => {
@@ -21,21 +25,32 @@ const useAuth = () => {
   
   const { user } = context;
   
-  // Role detection helpers
-  const isStaff = user?.role === 'staff' || user?.role === 'admin';
-  const isStudent = user?.role === 'student';
-  const isAdmin = user?.role === 'admin';
+
+  const { 
+    verifiedRole, 
+    isStaff: verifiedIsStaff, 
+    isStudent: verifiedIsStudent,
+    isVerifying,
+    error: roleError
+  } = useVerifiedRole();
   
-  // Get user's full name
+  
+  const isStaff = verifiedIsStaff;    
+  const isStudent = verifiedIsStudent;   
+  
+ 
   const userFullName = user?.firstName && user?.lastName 
     ? `${user.firstName} ${user.lastName}`
-    : user?.username || 'User';
+    : user?.username || user?.email?.split('@')[0] || 'User';
   
   return {
     ...context,
-    isStaff,
-    isStudent,
-    isAdmin,
+    
+    isStaff,          
+    isStudent,                 
+    verifiedRole,     
+    isVerifying,     
+    roleError,        
     userFullName
   };
 };
