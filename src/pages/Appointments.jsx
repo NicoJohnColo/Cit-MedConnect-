@@ -1,8 +1,3 @@
-// ============================================
-// APPOINTMENTS PAGE - WITH SLOT MANAGEMENT
-// src/pages/Appointments.jsx
-// ============================================
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -45,12 +40,10 @@ const Appointments = () => {
     refreshAppointments
   } = useAppointments();
 
-  // Debug: Log appointments data
   console.log('Appointments page - userAppointments:', userAppointments);
   console.log('Appointments page - user role:', user?.role);
   console.log('Appointments page - user ID:', user?.userId);
   
-  // Set up event listener for appointment updates
   useEffect(() => {
     const handleAppointmentsUpdated = () => {
       refreshAppointments && refreshAppointments();

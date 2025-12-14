@@ -1,8 +1,3 @@
-// ============================================
-// CALENDAR PAGE - UPDATED WITH NEW HOOKS
-// src/pages/Calendar.jsx
-// ============================================
-
 import React, { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import useAppointments from '../hooks/useAppointments';
@@ -17,20 +12,7 @@ const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Debug: Log appointments when they change
   React.useEffect(() => {
-    console.log('=== CALENDAR DEBUG ===');
-    console.log('Is Staff:', isStaff);
-    console.log('User appointments:', userAppointments);
-    console.log('Appointments count:', userAppointments?.length || 0);
-    if (userAppointments && userAppointments.length > 0) {
-      console.log('First appointment:', userAppointments[0]);
-      console.log('Date field:', userAppointments[0].scheduledDate || userAppointments[0].date);
-      console.log('Time field:', userAppointments[0].scheduledTime || userAppointments[0].time);
-      console.log('Status:', userAppointments[0].status);
-      console.log('Student ID:', userAppointments[0].studentId);
-    }
-    console.log('All appointments:', userAppointments);
   }, [userAppointments, isStaff]);
 
   // ============================================

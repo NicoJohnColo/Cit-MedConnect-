@@ -1,12 +1,3 @@
-/* ============================================
-   MODERN LANDING PAGE STYLES
-   CIT MedConnect+ - Enhanced Professional Design
-   ============================================ */
-
-/* ============================================
-   GLOBAL RESET & BASE
-   ============================================ */
-
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -33,18 +24,10 @@ body {
   color: #5A0A0A;
 }
 
-/* ============================================
-   LANDING PAGE CONTAINER
-   ============================================ */
-
 .landing-page {
   min-height: 100vh;
   background: #FFFFFF;
 }
-
-/* ============================================
-   LOADING STATE
-   ============================================ */
 
 .loading-container {
   display: flex;
@@ -67,10 +50,6 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-/* ============================================
-   NAVIGATION
-   ============================================ */
 
 .landing-nav {
   position: fixed;
@@ -261,10 +240,6 @@ body {
   width: 16px;
   height: 16px;
 }
-
-/* ============================================
-   HERO SECTION
-   ============================================ */
 
 .hero-section {
   position: relative;
@@ -643,10 +618,6 @@ body {
   }
 }
 
-/* ============================================
-   AUTH CARD
-   ============================================ */
-
 .auth-card {
   position: relative;
   background: rgba(255, 255, 255, 0.95);
@@ -754,10 +725,6 @@ body {
   transition: all 0.3s ease;
 }
 
-/* Debug borders - can be removed later */
-* { box-sizing: border-box; }
-
-/* Input Wrapper */
 .auth-form .form-group {
   margin-bottom: 1.5rem;
 }
@@ -765,10 +732,8 @@ body {
 .auth-form .input-wrapper {
   position: relative;
   width: 100%;
-  /* border: 1px solid red; */
 }
 
-/* Input Icons */
 .auth-form .input-icon {
   position: absolute;
   left: 1rem;
@@ -780,10 +745,8 @@ body {
   z-index: 2;
   width: 20px;
   height: 20px;
-  /* border: 1px solid blue; */
 }
 
-/* Password toggle button */
 .auth-form .password-toggle {
   position: absolute;
   right: 1rem;
@@ -799,10 +762,8 @@ body {
   justify-content: center;
   z-index: 3;
   transition: color 0.2s ease;
-  /* border: 1px solid green; */
 }
 
-/* Focus states */
 .auth-form .input-wrapper:focus-within .input-icon {
   color: #8B1A1A;
 }
@@ -810,7 +771,6 @@ body {
 .auth-form .password-toggle:hover,
 .auth-form .password-toggle:focus {
   color: #8B1A1A;
-  outline: none;
 }
 
 .password-toggle:hover {
@@ -822,7 +782,6 @@ body {
   color: #8B1A1A;
 }
 
-/* Form Inputs */
 .auth-form .form-input {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
@@ -840,8 +799,6 @@ body {
   box-sizing: border-box;
   outline: none;
 }
-
-/* This rule is now handled by the .input-icon:hover state */
 
 .form-input::placeholder {
   color: #A3A3A3;
@@ -1110,10 +1067,6 @@ body {
   text-decoration-thickness: 3px;
 }
 
-/* ============================================
-   TRUST BADGES
-   ============================================ */
-
 .trust-badges {
   background: #FAFAFA;
   padding: 3rem;
@@ -1145,10 +1098,6 @@ body {
   height: 24px;
   color: #8B1A1A;
 }
-
-/* ============================================
-   FEATURES SECTION
-   ============================================ */
 
 .features-section {
   padding: 8rem 3rem;
@@ -1335,10 +1284,6 @@ body {
 .from-rose-500 { background: linear-gradient(135deg, #F43F5E 0%, #EC4899 100%); }
 .from-amber-500 { background: linear-gradient(135deg, #F59E0B 0%, #EAB308 100%); }
 
-/* ============================================
-   BENEFITS SECTION
-   ============================================ */
-
 .benefits-section {
   padding: 8rem 3rem;
   background: white;
@@ -1480,10 +1425,6 @@ body {
   font-weight: 600;
 }
 
-/* ============================================
-   STATS SECTION
-   ============================================ */
-
 .stats-section-premium {
   padding: 8rem 3rem;
   background: linear-gradient(135deg, #6B0F0F 0%, #8B1A1A 100%);
@@ -1580,10 +1521,6 @@ body {
   height: 14px;
 }
 
-/* ============================================
-   TESTIMONIALS SECTION
-   ============================================ */
-
 .testimonials-section {
   padding: 8rem 3rem;
   background: #FAFAFA;
@@ -1662,10 +1599,6 @@ body {
   font-size: 0.875rem;
   color: #525252;
 }
-
-/* ============================================
-   CTA SECTION
-   ============================================ */
 
 .cta-section {
   padding: 8rem 3rem;
@@ -1759,10 +1692,6 @@ body {
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-4px);
 }
-
-/* ============================================
-   FOOTER
-   ============================================ */
 
 .footer-premium {
   background: #171717;
@@ -1899,10 +1828,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
 
 @media (max-width: 1200px) {
   .nav-container {

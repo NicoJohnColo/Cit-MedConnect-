@@ -1,8 +1,3 @@
-/* ============================================
-   DASHBOARD PAGE CSS
-   src/pages/Dashboard.css
-   ============================================ */
-
 .dashboard-page {
   display: flex;
   flex-direction: column;
@@ -21,7 +16,6 @@
   }
 }
 
-/* Hero Section */
 .dashboard-hero {
   background: linear-gradient(135deg, #8B1A1A 0%, #6B0F0F 50%, #5A0A0A 100%);
   border-radius: 20px;
@@ -126,7 +120,6 @@
   }
 }
 
-/* Stats Grid */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -212,7 +205,6 @@
   color: #059669;
 }
 
-/* Dashboard Content */
 .dashboard-content {
   display: flex;
   flex-direction: column;
@@ -227,20 +219,17 @@
   width: 100%;
 }
 
-/* Make recent appointments take full width for non-staff users */
 .dashboard-content:not(:has(.quick-actions-section)) .recent-appointments {
   width: 100%;
   max-width: 100%;
 }
 
-/* Adjust layout when quick actions are present (staff view) */
 .dashboard-content:has(.quick-actions-section) {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 28px;
 }
 
-/* Make recent appointments fill height when in staff view */
 .dashboard-content:has(.quick-actions-section) .recent-appointments {
   height: 100%;
   display: flex;
@@ -249,11 +238,10 @@
 
 .dashboard-content:has(.quick-actions-section) .appointments-list {
   flex: 1;
-  min-height: 0; /* Allows the list to shrink if needed */
-  overflow-y: auto; /* Add scroll if content overflows */
+  min-height: 0;
+  overflow-y: auto;
 }
 
-/* Find Doctor Section */
 .find-doctor-section {
   padding: 36px;
 }
@@ -306,7 +294,6 @@
   box-shadow: 0 0 0 4px rgba(139, 26, 26, 0.12);
 }
 
-/* Quick Actions (Staff) */
 .quick-actions-section {
   padding: 36px;
 }
@@ -380,14 +367,13 @@
   transform: translateX(6px);
 }
 
-/* Recent Appointments */
 .recent-appointments {
   padding: 36px;
   position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 400px; /* Minimum height to prevent it from being too small */
+  min-height: 400px;
 }
 
 .section-header {
@@ -402,12 +388,11 @@
   flex-direction: column;
   gap: 18px;
   flex: 1;
-  min-height: 0; /* Allows the list to shrink if needed */
-  overflow-y: auto; /* Add scroll if content overflows */
-  padding-right: 8px; /* Add some padding for scrollbar */
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
-/* Custom scrollbar for appointments list */
 .appointments-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -506,7 +491,6 @@
   font-size: 14px;
 }
 
-/* Badge */
 .badge {
   padding: 6px 12px;
   border-radius: 8px;
@@ -530,7 +514,6 @@
   color: #991B1B;
 }
 
-/* Responsive */
 @media (max-width: 1200px) {
   .dashboard-content {
     grid-template-columns: 1fr;
