@@ -1,8 +1,3 @@
-/* ============================================
-   INPUT COMPONENT CSS
-   src/components/common/Input.css
-   ============================================ */
-
 .input-group {
   display: flex;
   flex-direction: column;
@@ -111,7 +106,6 @@
   font-weight: 500;
 }
 
-/* Placeholder */
 .form-input::placeholder {
   color: #9CA3AF;
   font-weight: 400;

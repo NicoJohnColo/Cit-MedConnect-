@@ -1,8 +1,3 @@
-/* ============================================
-   NOTIFICATIONS PAGE CSS
-   src/pages/Notifications.css
-   ============================================ */
-
 .notifications-page {
   display: flex;
   flex-direction: column;
@@ -21,7 +16,6 @@
   }
 }
 
-/* Header Actions */
 .header-actions {
   display: flex;
   gap: 12px;
@@ -57,7 +51,6 @@
   cursor: not-allowed;
 }
 
-/* Notification Filters */
 .notification-filters {
   display: flex;
   gap: 12px;
@@ -102,7 +95,6 @@
   transform: translateY(-2px);
 }
 
-/* Notifications Container */
 .notifications-container {
   min-height: 450px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
@@ -111,14 +103,12 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Notifications List */
 .notifications-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Notification Item */
 .notification-item {
   display: flex;
   gap: 18px;
@@ -187,7 +177,6 @@
   border-color: #8B1A1A;
 }
 
-/* Notification Icon */
 .notification-icon {
   width: 56px;
   height: 56px;
@@ -204,7 +193,6 @@
   transform: scale(1.15) rotate(-5deg);
 }
 
-/* Notification Content */
 .notification-content {
   flex: 1;
   display: flex;
@@ -247,7 +235,6 @@
   font-weight: 500;
 }
 
-/* Notification Actions */
 .notification-actions {
   display: flex;
   gap: 10px;
@@ -282,7 +269,6 @@
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
 }
 
-/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -325,7 +311,6 @@
   line-height: 1.6;
 }
 
-/* Send Notification Form */
 .send-notification-form {
   display: flex;
   flex-direction: column;
@@ -392,7 +377,6 @@
   margin-left: 4px;
 }
 
-/* Form Inputs */
 .input-group {
   display: flex;
   flex-direction: column;
@@ -425,7 +409,6 @@
   box-shadow: 0 0 0 4px rgba(139, 26, 26, 0.1);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .notifications-page {
     gap: 24px;

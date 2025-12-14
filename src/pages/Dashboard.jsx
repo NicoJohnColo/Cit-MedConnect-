@@ -1,8 +1,3 @@
-// ============================================
-// DASHBOARD PAGE - DUAL POV (Student & Staff)
-// src/pages/Dashboard.jsx
-// ============================================
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
@@ -30,7 +25,6 @@ const Dashboard = () => {
   const { upcomingAppointments, appointmentStats, refreshAppointments } = useAppointments();
   const { users, usersCount, studentsOnly, staffOnly, loading: usersLoading } = useUsers();
   
-  // Set up event listener for appointment updates
   useEffect(() => {
     const handleAppointmentsUpdated = () => {
       refreshAppointments && refreshAppointments();
@@ -50,7 +44,6 @@ const Dashboard = () => {
     available: ''
   });
 
-  // Greeting based on time
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -58,7 +51,6 @@ const Dashboard = () => {
     return 'Good Evening';
   }, []);
   
-  // Stats for dashboard
   const stats = useMemo(() => {
     if (isStaff) {
       return [

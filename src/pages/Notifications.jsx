@@ -1,8 +1,3 @@
-// ============================================
-// NOTIFICATIONS PAGE - WITH STAFF SEND FEATURE
-// src/pages/Notifications.jsx
-// ============================================
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';

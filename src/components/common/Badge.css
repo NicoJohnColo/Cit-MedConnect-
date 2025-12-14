@@ -1,8 +1,3 @@
-/* ============================================
-   BADGE COMPONENT CSS
-   src/components/common/Badge.css
-   ============================================ */
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -15,7 +10,6 @@
   letter-spacing: 0.3px;
 }
 
-/* Badge Sizes */
 .badge-sm {
   padding: 4px 10px;
   font-size: 11px;
@@ -31,7 +25,6 @@
   font-size: 14px;
 }
 
-/* Badge Variants */
 .badge-default {
   background: #F3F4F6;
   color: #374151;
